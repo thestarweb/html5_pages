@@ -1,0 +1,13 @@
+body{
+	width:700px;
+	margin: 0 auto;
+}
+p:before{
+	content: "　　";
+}
+div{
+	text-align: center;
+}
+#canvas_src{
+	display: none;
+}
