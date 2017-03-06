@@ -1,0 +1,1 @@
+game.flags.endtype=1;var temp=game.s.g.mmx.blocks;for(var i=0;i<4;i++) for(var j=0;j<10;j++){temp[i][j]='08F'}game.s.g.mmx.isopen();

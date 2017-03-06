@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="user-scalable=no" />
+	<title>幻城1--神秘房间</title>
+	<style>
+	*{
+		margin: 0;
+		padding: 0;
+		position: absolute;
+	}
+	body{
+		background-color: #000;
+	}
+	#game{
+		background-color: #000;
+		top: 0;
+		color: #FFF;
+	}
+	#game canvas{
+		width: 100%;
+		height: 100%;
+	}
+	</style>
+</head>
+<div id="game"></div>
+<script src="../../debug.js"></script>
+<script>
+	//界面初始化
+	var game=(function (){
+		//游戏初始化
+		var game_div=document.getElementById('game');
+		var libs=['element/floor.js','element/wall.js','element/button.js'];
+		var scripts=['s/global.js','start.js','s/s0.js','s/S.js','s/E.js','s/N.js','s/g.js','s/badend.js','s/sleeping.js','s/trueend.js'];
+		var need_load=libs.length+scripts.length;
+		var load_script=0;
+		for(var i in libs){
+			game_div.innerHTML+='正在加载'+libs[i]+'<br/>';
+			document.write('<script src="../lib/'+libs[i]+'"><\/script>');
+		}
+		for(var i in scripts){
+			game_div.innerHTML+='正在加载'+scripts[i]+'<br/>';
+			document.write('<script src="'+scripts[i]+'"><\/script>');
+		}
+		var ctx1,ctx0;
+		var timeout;
+		var message='';//存放消息
+		var message_last={};
+		var draw_message=function(){
+			if(message){
+				//文字排版引擎
+				var ex=function(size){
+					if(typeof(message.text)!='string') return;
+					var text=message.text;
+					var n_message='',lines=[],char='',max=0.8/size,index=0;
+					for(var i=0;i<text.length;i++){
+						char=text.substr(i,1);
+						if(n_message.length+1>max){//应该换行
+							if(/[a-zA-Z0-9\.\?…，。？《》]/.test(char)&&index!=0){//最好拿走点其他文字
+								lines.push(n_message.substr(0,index-1));
+								n_message=n_message.substr(index,n_message.length-index+1);
+								//n_message.substr(index+1,n_message.length);
+								index=0;
+							}else{
+								lines.push(n_message);
+								index=0;n_message=char;
+							}
+							continue;
+						}else if(char=="\n"){
+							lines.push(n_message);
+							index=0;n_message='';
+							continue;
+						}
+						if(!/[a-zA-Z0-9\.\?…，。？《》]/.test(char)) {
+							index=message.length;
+						}
+						n_message+=char;
+					}
+					if(n_message){
+						lines.push(n_message);
+					}
+					//return lines;
+					message.text=lines;
+				}
+				ctx1.fillStyle='#000';
+				var H=0.1;
+				ctx1.fillStyle="#000";//默认文字颜色
+				switch (message.type){
+					case -1:
+						ex(size=0.05);
+						ctx1.textAlign="center";var top=-0.5;
+						break;
+					case 1:
+						ex(size=0.05);
+						ctx1.textAlign="center";var top=0.4-message.text.length*size*2;
+						break;
+					case 'select':
+						H=0.21;
+						ex(size=0.05);
+						ctx1.textAlign="center";var top=-message.text.length*size-0.1;
+						break;
+					default:
+						ex(size=0.05);
+						ctx1.textAlign="center";var top=-message.text.length*size;//-0.06
+				}
+				
+				ctx1.font=game.x*size+"px Georgia";
+				ctx1.fillRect(-game.x*0.5,game.y*top,game.x,game.y*(size*message.text.length*2+H));
+				ctx1.fillStyle="#FFF";
+				for(var i=0;i<message.text.length;i++){
+					ctx1.fillText(message.text[i],0,game.y*(top+size*2*i+size*2));//0.035*i);
+				}
+				if(message.type=='select'){
+					if(typeof(message.nowid)=='undefined') message.nowid=0;
+					ctx1.font=game.x*0.04+"px Georgia";
+					ctx1.fillText(message.c[message.nowid],0,game.y*(top+size*2*i+0.09));
+					ctx1.fillText('确定',0,game.y*(top+size*2*i+0.19));ctx1.fillText('上一个选项',-game.x/3,game.y*(top+size*2*i+0.19));ctx1.fillText('下一个选项',game.x/3,game.y*(top+size*2*i+0.19));
+				}else{
+					ctx1.font=game.x*0.02+"px Georgia";
+					ctx1.textAlign="right";
+					ctx1.fillText('点击任意位置/按任意键继续',game.x/3,game.y*(top+size*2*i+0.09));
+				}
+			}
+		}
+		
+		var _redraw=function(t){
+			if(t==0||t==1){
+				ctx0.clearRect(-game.x/2,-game.y/2,game.x,game.y);
+				now_s.draw(ctx0,game.x,game.y);
+			}
+			if(t==0||t==2){
+				ctx1.clearRect(-game.x/2,-game.y/2,game.x,game.y);
+				game.s.global&&game.s.global.draw&&game.s.global.draw(ctx0,ctx1);
+				draw_message();
+			}
+		};
+
+		var now_s={};
+		//加载完成，进入开始界面
+		var load_over=function(){
+			game_div.innerHTML='';
+			game_div.onclick=function(ev){
+			ev.x||(ev.x=ev.clientX);
+			ev.y||(ev.y=ev.clientY);
+			//var_dump(ev);
+				//for(var i in ev) alert(i+'='+ev[i]);
+				if(message){
+					game.clean_message(ev.x,ev.y);
+				}else{
+					if(game.s.global&&game.s.global.click&&game.s.global.click((ev.x-window.innerWidth/2)/game.x,ev.y/game.y-0.5))
+						now_s.click&&now_s.click((ev.x-window.innerWidth/2)/game.x,ev.y/game.y-0.5);
+				}
+			}
+			var canvas=[document.createElement('canvas'),document.createElement('canvas')];
+			ctx0=canvas[0].getContext('2d');
+			ctx1=canvas[1].getContext('2d');
+			game_div.appendChild(canvas[0]);
+			game_div.appendChild(canvas[1]);
+			now_s=game.s.start;
+			(window.onresize=function(){
+				if(window.innerHeight*16<window.innerWidth*9){
+					game_div.style.height=(game.y=canvas[1].height=canvas[0].height=window.innerHeight)+'px';
+					game_div.style.width=(game.x=canvas[1].width=canvas[0].width=window.innerHeight*16/9)+'px';
+				}else{
+					game_div.style.width=(game.x=canvas[1].width=canvas[0].width=window.innerWidth)+'px';
+					game_div.style.height=(game.y=canvas[1].height=canvas[0].height=window.innerWidth*9/16)+'px';
+				}
+				game_div.style.left=(window.innerWidth-canvas[0].width)/2+"px"
+				ctx0.translate(canvas[0].width/2,canvas[0].height/2);
+				ctx1.translate(canvas[0].width/2,canvas[0].height/2);
+				//now_s.draw(ctx0,canvas[0].width,canvas[0].height);
+				//draw_message();
+				_redraw(0);
+			})();
+		}
+		return {
+			s:{},
+			element:{},
+			flags:{},
+			get_2d:function(x,y,z){
+				return {x:x*(1-y)*this.x,y:-z*(1-y)*this.y};
+			},
+			is_click_f:function(d1,d2,x,y){
+				//alert(x);
+				//alert(5);
+				return (d1.x-x)*(d2.y-d1.y)-(d2.x-d1.x)*(d1.y-y);
+			},
+			script_load:function(name){
+				game_div.innerHTML+=name+'加载完成<br/>';
+				if(++load_script==need_load) load_over();
+			},
+			x:0,
+			y:0,
+			change_s:function(name){
+				this.setchange(1,'',function(){
+					now_s=game.s[name];
+					game.redraw(0);
+					game.setchange();
+				});
+				//window.onresize();
+				//redraw(0);
+				return 1;
+			},
+			show_message:function(nmessage,type,callback,c){
+				if(message){
+					message_last=message_last.next={text:nmessage,type:type,callback:callback,c:c};
+				}else{
+					message_last=message={text:nmessage,type:type,callback:callback,c:c};
+					draw_message();
+				}
+			},
+			clean_message:function(x,y){
+				if(!message) return;
+				if(message.type=='select'){
+					y=y/game.y-0.5;
+					//alert(y);alert(0.05*message.text.length*2+0.21);
+					if(y<0.05*message.text.length*2+0.06&&y>0.05*message.text.length*2-0.04){
+						if(x<window.innerWidth*0.35){
+							if(--message.nowid<0) message.nowid=message.c.length-1;
+						}else if(x>window.innerWidth*0.65){
+							if(++message.nowid==message.c.length) message.nowid=0
+						}else{
+							message.callback&&message.callback(message.nowid);
+							if(message.next){
+					message=message.next;
+					//draw_message();
+				}else{
+				message=null;
+				}
+						}
+						_redraw(2);
+					}
+					return;
+				}
+				//ctx1.clearRect(-this.x/2,-this.y/2,this.x,this.y);
+				var back=message.callback;
+				if(message.next){
+					message=message.next;
+					//draw_message();
+				}else{
+				message=null;
+				}
+				back&&back();
+				_redraw(2);
+			},
+			redraw:function(t){
+				_redraw(t);
+			},
+			settimeout:function(fun,time){
+				timeout=setTimeout(fun,time);
+				//alert(fun());
+			},
+			setchange:function(f,color,endfun){
+				var nowa=1;
+				var fun=function(){
+					game.redraw(2);
+					if(nowa>0.001){//不知道为何，最后一帧会白屏，只好这样强行屏蔽掉最后一帧
+						//game.redraw(1);
+						//alert(ctx1);
+						ctx1.fillStyle='rgba(0,0,0,'+(f?(1-nowa):nowa)+')';
+						ctx1.fillRect(-game.x*0.5,-game.y*0.5,game.x,game.y);
+						nowa-=0.1;
+						game.settimeout(fun,10);
+					}else{
+						endfun&&endfun();
+					}
+				}
+				fun();
+			}
+		};
+	})();
+</script>
+</html>
