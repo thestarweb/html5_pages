@@ -9,8 +9,10 @@
 	<h4>去噪原理：</h4>
 	<p>由于青果教务系统课表生成原理，每次都可以获取到的课表噪点都会生成到不同的地方，如果比较两张图片，只要两张图上同一个点都为黑色即可认为这一个点是黑色。通过遍历图片上的每一个点即可从新生成一张几乎没有噪点的课程表（在同一位置生成噪点的概率很低，但是也还是不排除有，可多次操作得到无噪点的图）并用于图像识别和打印。</p>
 	<p>目前还只能实现简单的逐点判断，所以如果不会保存而使用截图的话，请务必保证在同样的缩放等级，且左上角的起始点位置一致。如需截图，推荐在页面默认缩放的情况下，拖动到顶部或底部并截取全屏已保证不会错位，将来会做简单的自动对齐功能，但是不会很强大。</p>
-	<div>选取图片1<input type="file" id="file1"/></div>
-	<div>选取图片2<input type="file" id="file2"/></div>
+	<div>选取图片1<input type="file" id="file1"/>选取图片2<input type="file" id="file2"/><input type="button" id="start" value="开始"/></div>
+	<div id="jd"><p id="jd_bar"></p><span id="jd_num">0</span>%</div>
+	<div id="out_info"></div>
 	<div id="canvas_src"><canvas id="m1"></canvas><canvas id="m2"></canvas></div>
+	<script src="./index.js"></script>
 </body>
 </html>
