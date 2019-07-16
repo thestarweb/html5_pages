@@ -1,0 +1,410 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<title>HTML5拼图游戏</title>
+<meta charset="utf-8" />
+<style type="text/css">
+	* {
+		position:absolute;
+		margin:0;
+		padding:0;
+	}
+	#main {
+		position:fixed;
+		width:800px;
+		height:400px;
+		left:50%;
+		margin-left:-400px;
+		top:30px;
+	}
+	#mycanvas {
+		width:100%;
+		height:100%;
+	}
+</style>
+</head>
+<body>
+<div id="main">
+	<canvas id="mycanvas">您的浏览器不支持HTML5</canvas>
+	<div id="inf">等候js加载</div>
+</div>
+<script type="text/javascript">
+	document.getElementById('inf').innerText = '';
+
+
+	var game = function(canve){
+		//尝试获取画笔等
+		try {
+			var canvas = document.getElementById(canve);
+			//强制宽高与css保持一致
+			var width = canvas.width=800;
+			var height = canvas.height=400;
+			var pen = canvas.getContext('2d');
+		} catch (e) {
+		}
+		//检测是否获取到画笔
+		if (pen) {
+			//存在画笔，继续初始化
+			//设置好对象
+			//画布对象
+			var canve = {
+				width: width,
+				height: height,
+				pen: pen
+			};
+			//背景绘制函数
+			var setbg = function () {
+				canve.pen.clearRect(0, 0, canve.width, canve.height);
+				var color = canve.pen.createLinearGradient(0, 0, canve.width, canve.height);
+				color.addColorStop('0', 'blue');
+				color.addColorStop('1', 'red');
+				canve.pen.fillStyle = color;
+				canve.pen.fillRect(0, 0, canve.width, canve.height);
+			};
+			//用时记录
+			var t = 0;
+			//开始函数
+			var star = function (the) {
+				isStar = true;
+				for (var $i = 0; $i < 9; $i++) {
+					block[$i]=[];
+					block[$i]['weizhi'] = $i;
+					block[$i]['img'] = new Image();
+					block[$i]['img'].src='1_'+($i+1)+'.jpg'
+				}
+				block[8]['img']=null
+				for (var $i = 0; $i < 9; $i++) {
+					var h = Math.floor(Math.random() * (9));
+					var temp = block[$i];
+					block[$i] = block[h];
+					block[h] = temp;
+				}
+				img = new Image();
+				img.src = '1.jpg';
+				time = setInterval(run, 10);
+			};
+			//要拼的图片
+			var img = null;
+			var run=function(){
+				t++;
+				draw();
+			}
+			//计时器
+			var time = null;
+			//定义一个空数组，以便到时候存放各块拼图
+			var block = [];
+			//状态标记
+			var isStar = false;
+			//移动方法
+			var move = function (h, l) {
+				//得到当前块位置
+				var t = l + h * 3;
+				//左右移动判断
+				switch (l) {
+					case 0:
+						//说明在第一列，无法左移，但是可能可以右移
+						if (block[t + 1]['img'] == null) {
+							var temp = block[t + 1];
+							block[t + 1] = block[t];
+							block[t] = temp;
+							return 1;
+						}
+						break;
+					case 1:
+						//说明在第二列，可能可以左移也可能右移
+						if (block[t+1]['img'] == null) {
+							//右
+							var temp = block[t + 1];
+							block[t + 1] = block[t];
+							block[t] = temp;
+							return 1;
+						} else if (block[t-1]['img'] == null) {
+							//左
+							var temp = block[t - 1];
+							block[t - 1] = block[t];
+							block[t] = temp;
+							return 1;
+						}
+						break;
+					case 2:
+						//说明在第一列，无法右移，但是可能可以左移
+						if (block[t-1]['img'] == null) {
+							var temp = block[t - 1];
+							block[t - 1] = block[t];
+							block[t] = temp;
+							return 1;
+						}
+						break;
+				}
+				switch (h) {
+					case 0:
+						//第一行
+						if (block[t + 3]['img'] == null) {
+							var temp = block[t + 3];
+							block[t + 3] = block[t];
+							block[t] = temp;
+							return 1;
+						}
+						break;
+					case 1:
+						//第二行
+						if (block[t + 3]['img'] == null) {
+							var temp = block[t + 3];
+							block[t + 3] = block[t];
+							block[t] = temp;
+							return 1;
+						} else if (block[t - 3]['img'] == null) {
+							var temp = block[t - 3];
+							block[t - 3] = block[t];
+							block[t] = temp;
+							return 1;
+						}
+						break;
+					case 2:
+						if (block[t - 3]['img'] == null) {
+							var temp = block[t - 3];
+							block[t - 3] = block[t];
+							block[t] = temp;
+							return 1;
+						}
+						break;
+				}
+				return 0;
+
+			}
+			var draw = function () {
+				if (isStar) {
+					setbg();//重绘背景
+					canve.pen.strokeStyle = '#1E90FF';
+					canve.pen.lineWidth = 0.8;
+					canve.pen.strokeText('游戏用时 ' + t + ' 毫秒', canve.width * 0.5 + 150, 50);
+					canve.pen.drawImage(img, canvas.width / 2 + 10, 80);
+					for (var $i = 0; $i < 3; $i++) {
+						for (var $j = 0; $j < 3; $j++) {
+							if (block[$i * 3 + $j]['img']) {
+								canve.pen.drawImage(block[$i * 3 + $j]['img'], $j * 100 + 10, $i * 100 + 80);
+							}
+						}
+					}
+				} else {
+					//绘制第一屏
+					setbg();
+					canve.pen.textAlign = 'center';
+					canve.pen.font = '50px Arial';
+					canve.pen.fillStyle = '#FFF';
+					canve.pen.fillText('html5拼图', width * 0.5, 60);
+					canve.pen.strokeStyle = 'orange';
+					canve.pen.strokeText('html5拼图', width * 0.5, 60);
+					canve.pen.fillStyle = '#99F';
+					var w = 100;
+					var h = 30;
+					canve.pen.fillRect(width * 0.5 - w / 2, height * 0.5, w, h);
+					canve.pen.fillStyle = '#000';
+					canve.pen.font = '25px Arial';
+					canve.pen.fillText('开始游戏', canve.width * 0.5, canve.height * 0.5 + 22);
+					canve.pen.strokeStyle = '#1E90FF';
+					canve.pen.lineWidth = 0.8;
+					canve.pen.strokeText('开始游戏', canve.width * 0.5, canve.height * 0.5 + 22);
+				}
+			}
+			//是否获胜
+			var isWin = function () {
+				for (var $i = 0; $i < 8; $i++) {
+					if (block[$i]['weizhi'] != $i) {
+						return 0;
+					}
+				}
+				draw();
+				clearTimeout(time);
+				time = null;
+				alert('恭喜完成，用时' + t / 100 + '秒');
+				//重新初始化
+				t = 0;
+				isStar = false;
+				draw();
+			}
+			//点击事件
+			var click = function (even) {
+				var x = even.offsetX ;
+				var y = even.offsetY ;
+				if (!isStar && x <= canve.width * 0.5 + 50 && x >= canve.width * 0.5 - 50 && y >= canve.height / 2 && y <= canve.height / 2 + 30) {
+					star(this);
+				} else if (isStar) {
+					if (x < 10) {
+					} else if (x < 110) {
+						var l=0;
+					} else if (x < 210) {
+						var l=1;
+					} else if (x < 310) {
+						var l=2;
+					}
+					if(!isNaN(l)){
+						if (y < 80) {
+						} else if (y < 180) {
+							var h = 0;
+						} else if (y < 280) {
+							var h = 1;
+						} else if (y < 360) {
+							var h = 2;
+						}
+						if (!isNaN(h)) {
+							if (move(h, l)) {
+								isWin();
+							}
+						}
+					}
+				}
+			}
+			canvas.onclick = click;//绑定点击事件
+			draw();
+		} else {
+			alert('此浏览器不支持html5，游戏无法运行, 去其他原因导致的程序中断');
+		}
+	}
+
+	game('mycanvas');
+	/*
+	*
+	下面是网上抄的解决无解问题的c#代码
+	*
+	static void Main(string[] args)
+        {
+            //int[] a = new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 };
+            //int[] a = new int[] { 1, 3, 5, 7, 9, 11, 13, 0, 2, 4, 6, 8, 10, 12, 14 };
+            //int[] a = new int[] { 1, 7, 0, 3, 11, 13, 9, 14, 2, 4, 6, 8, 10, 12, 5 };
+            //int[] a = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 14, 10, 12, 13 };
+            int[] a = new int[] { 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2 , 1, 0 };
+            int[] lastA = (int[])a.Clone();
+
+            int i = 0;      //要把数字i放到位置i上
+            while (i < a.Length)
+            {
+                //找到数字i的位置
+                int tmp = 0;
+                for (tmp = 0; tmp < a.Length; tmp++)
+                    if (i == a[tmp])
+                        break;
+
+                //如果数字i就在位置i，处理下一个数字
+                if (tmp == i)
+                {
+                    i++;
+                    continue;
+                }
+
+                //如果数字i不在i的位置，并且它在倒数第4个及以前，循环左移位
+                if (i < 10 && tmp < a.Length - 3)
+                {
+                    a = ArrayShiftLeft(a, tmp);
+                    continue;
+                }
+
+                //否则循环右移位
+                if (i < 10 && tmp >= a.Length - 3)
+                {
+                    a = ArrayShiftRight(a, tmp);
+                    continue;
+                }
+                //如果数字i不在i的位置，说明已经是最后5个数
+                //处理倒数第5个数
+                if (i == a.Length - 5)
+                {
+                    a = Last5ShiftLeft(a);
+                    continue;
+                }
+
+                //处理倒数第4个数
+                if (i == a.Length - 4)
+                {
+                    a = Last4ShiftLeft(a, tmp);
+                    continue;
+                }
+                
+                //如果不能满足上面两个条件则不能做变换
+                break;
+            }
+
+            lastA = (int[])a.Clone();
+            Array.Sort(lastA);
+            PrintArray(a);
+
+            if (i == a.Length)
+                Console.WriteLine("Solved");
+            else
+                Console.WriteLine("No solution");
+            Console.ReadKey();
+        }
+
+        //[c  *  d  e] <--> [e  *  c  d]
+        private static int[] Last4ShiftLeft(int[] a, int pos)
+        {
+            if (pos == 13)
+            {
+                int tmp = a[11];
+                a[11] = a[13];
+                a[13] = a[14];
+                a[14] = tmp;
+            }
+            else if (pos == 14)
+            {
+                int tmp = a[11];
+                a[11] = a[14];
+                a[14] = a[13];
+                a[13] = tmp;
+            }
+            PrintArray(a);
+            return a;
+        }
+
+        //[e  c  f  g  d|] -> [c  d  e  f  g|]  
+        private static int[] Last5ShiftLeft(int[] a)
+        {
+            int tmp = a[10];
+            a[10] = a[11];
+            a[11] = a[14];
+            a[14] = a[13];
+            a[13] = a[12];
+            a[12] = tmp;
+
+            PrintArray(a);
+
+            return a;
+        }
+
+        static void PrintArray(int[] a)
+        {
+            for(int i = 0; i < a.Length; i++)
+                Console.Write(string.Format("{0, 3}", a[i]));
+            Console.WriteLine();
+        }
+
+        //将[c  a  *  *  b]转换成[a  b  *  *  c]，可看作循环左移位
+        static int[] ArrayShiftLeft(int[] a, int pos)
+        {
+            int tmp = a[pos - 1];
+            a[pos - 1] = a[pos];
+            a[pos] = a[pos + 3];
+            a[pos + 3] = tmp;
+
+            PrintArray(a);
+
+            return a;
+        }
+
+        //将[b  c  *  *  a]转换成[a  b  *  *  c]，可看作循环右移位
+        static int[] ArrayShiftRight(int[] a, int pos)
+        {
+            int tmp = a[pos - 4];
+            a[pos - 4] = a[pos];
+            a[pos] = a[pos - 3];
+            a[pos - 3] = tmp;
+
+            PrintArray(a);
+
+            return a;
+        }
+
+	*/
+</script>
+</body>
+</html>
