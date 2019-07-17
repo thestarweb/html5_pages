@@ -145,6 +145,18 @@
 					this.pen.lineWidth = 0.8;
 					//canve.pen.strokeText('游戏用时 ' + t + ' 毫秒', canve.width * 0.5 + 150, 50);
 					this.pen.drawImage(this.img, this.canva.width / 2 + 10, 80);
+					for(var i=0;i<=this.lv_x;i++){
+						this.pen.beginPath();
+						this.pen.moveTo(this.canva.width / 2 + 10 + i * this.pre_x, 80);	//起点
+						this.pen.lineTo(this.canva.width / 2 + 10 + i * this.pre_x, 80+this.img.height);		//末点
+						this.pen.stroke(); 
+					}
+					for(var j=0;j<=this.lv_y;j++){
+						this.pen.beginPath();
+						this.pen.moveTo(this.canva.width / 2 + 10, 80 + j * this.pre_y);	//起点
+						this.pen.lineTo(this.canva.width / 2 + 10 + this.img.width, 80 + j * this.pre_y);		//末点
+						this.pen.stroke();
+					}
 					for (var $i = 0; $i < this.lv_x; $i++) {
 						for (var $j = 0; $j < this.lv_y; $j++) {
 							if (this.block[$i + $j * this.lv_x] !== null) {
@@ -160,6 +172,18 @@
 									this.pre_y);
 							}
 						}
+					}
+					for(var i=0;i<=this.lv_x;i++){
+						this.pen.beginPath();
+						this.pen.moveTo(10 + i * this.pre_x, 80);	//起点
+						this.pen.lineTo(10 + i * this.pre_x, 80+this.img.height);		//末点
+						this.pen.stroke(); 
+					}
+					for(var j=0;j<=this.lv_y;j++){
+						this.pen.beginPath();
+						this.pen.moveTo(10, 80 + j * this.pre_y);	//起点
+						this.pen.lineTo(10 + this.img.width, 80 + j * this.pre_y);		//末点
+						this.pen.stroke();
 					}
 				} else {
 					//绘制第一屏
