@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>HTML5拼图游戏</title>
+<meta charset="utf-8" />
+<style type="text/css">
+	* {
+		position:absolute;
+		margin:0;
+		padding:0;
+	}
+	#main {
+		position:fixed;
+		width:800px;
+		height:400px;
+		left:50%;
+		margin-left:-400px;
+		top:30px;
+	}
+	#mycanvas {
+		width:100%;
+		height:100%;
+	}
+</style>
+</head>
+<body>
+<div id="main">
+	<canvas id="mycanvas">您的浏览器不支持HTML5</canvas>
+	<div id="inf">等候js加载</div>
+</div>
+<script type="text/javascript">
+	document.getElementById('inf').innerText = '';
+
+
+	var gameCore = function(canva,img_src,lv_x,lv_y){
+		//尝试获取画笔等
+//		try {
+			this.canva = document.getElementById(canva);
+			//强制宽高与css保持一致
+			this.gameWidth = this.canva.width = 800;
+			this.gameHeight = this.canva.height = 400;
+			this.pen = this.canva.getContext('2d');
+			self = this;
+			this.img = new Image();
+			this.img.onload = () => {
+				this.pre_x = this.img.width / this.lv_x;
+				this.pre_y = this.img.height / this.lv_y;
+			}
+			this.img.src=img_src;
+			this.lv_x=lv_x;
+			this.lv_y=lv_y;
+		// } catch (e) {
+		// }
+		//检测是否获取到画笔
+		if (this.pen) {
+			//存在画笔，继续初始化
+			//设置好对象
+			//画布对象
+			// var canve = {
+			// 	width: width,
+			// 	height: height,
+			// 	pen: pen
+			// };
+			//定义一个空数组，以便到时候存放各块拼图
+			this.block = [];
+			//状态标记
+			this.isStart = false;
+			//背景绘制函数
+			this.setbg = function () {
+				this.pen.clearRect(0, 0, this.gameWidth, this.gameHeight);
+				var color = this.pen.createLinearGradient(0, 0, this.gameWidth, this.gameHeight);
+				color.addColorStop('0', 'blue');
+				color.addColorStop('1', 'red');
+				this.pen.fillStyle = color;
+				this.pen.fillRect(0, 0, this.canva.width, this.canva.height);
+			};
+			this.start = function (the) {
+				if(this.isStart) return;
+				this.isStart = true;
+				this.block = [];//清空下数组
+				for (var $i = 0; $i < this.lv_x*this.lv_y; $i++) {
+					this.block[$i]=$i;
+				}
+				this.block[this.lv_x*this.lv_y-1]=null;
+				for (var $i = 0; $i < this.lv_x*this.lv_y; $i++) {
+					var h = Math.floor(Math.random() * (this.lv_x*this.lv_y));
+					var temp = this.block[$i];
+					this.block[$i] = this.block[h];
+					this.block[h] = temp;
+				}
+				this.draw();
+			};
+			//要拼的图片
+			var img = null;
+			var run=function(){
+				t++;
+				draw();
+			}
+			//计时器
+			var time = null;
+			//移动方法
+			this.move = function (h, l) {
+				//得到当前块位置
+				var t = l + h * this.lv_x;
+				if (this.block[t+1] === null) {
+					//右
+					if(l != this.lv_x-1){
+						// var temp = this.block[t + 1];
+						// this.block[t + 1] = this.block[t];
+						// this.block[t] = temp;
+						this.block[t + 1] = this.block[t];
+						this.block[t]=null;
+						return 1;
+					}
+				} else if (this.block[t-1] === null) {
+					//左
+					if(l != 0){
+						var temp = this.block[t - 1];
+						this.block[t - 1] = this.block[t];
+						this.block[t] = temp;
+						return 1;
+					}
+				} else if (this.block[t + this.lv_x] === null) {
+					if(h != this.lv_y - 1){
+						var temp = this.block[t + this.lv_x];
+						this.block[t + this.lv_x] = this.block[t];
+						this.block[t] = temp;
+						return 1;
+					}
+				} else if (this.block[t - this.lv_x] === null) {
+					if(h != 0){
+						var temp = this.block[t - this.lv_x];
+						this.block[t - this.lv_x] = this.block[t];
+						this.block[t] = temp;
+						return 1;
+					}
+				}
+				return 0;
+
+			}
+			this.draw = function () {
+				if (this.isStart) {
+					this.setbg();//重绘背景
+					this.pen.strokeStyle = '#1E90FF';
+					this.pen.lineWidth = 0.8;
+					//canve.pen.strokeText('游戏用时 ' + t + ' 毫秒', canve.width * 0.5 + 150, 50);
+					this.pen.drawImage(this.img, this.canva.width / 2 + 10, 80);
+					for (var $i = 0; $i < this.lv_x; $i++) {
+						for (var $j = 0; $j < this.lv_y; $j++) {
+							if (this.block[$i + $j * this.lv_x] !== null) {
+								this.pen.drawImage(
+									this.img, 
+									(this.block[$i + $j * this.lv_x] % this.lv_x) * this.pre_x,
+									Math.floor(this.block[$i + $j * this.lv_x] / this.lv_x) * this.pre_y,
+									this.pre_x,
+									this.pre_y,
+									$i * this.pre_x + 10, 
+									$j * this.pre_y + 80,
+									this.pre_x,
+									this.pre_y);
+							}
+						}
+					}
+				} else {
+					//绘制第一屏
+					this.setbg();
+					//var canva=this.canva;
+					this.pen.textAlign = 'center';
+					this.pen.font = '50px Arial';
+					this.pen.fillStyle = '#FFF';
+					this.pen.fillText('html5拼图', this.gameWidth * 0.5, 60);
+					this.pen.strokeStyle = 'orange';
+					this.pen.strokeText('html5拼图', this.gameWidth * 0.5, 60);
+					this.pen.fillStyle = '#99F';
+					var w = 100;
+					var h = 30;
+					this.pen.fillRect(this.gameWidth * 0.5 - w / 2, this.gameHeight * 0.5, w, h);
+					this.pen.fillStyle = '#000';
+					this.pen.font = '25px Arial';
+					this.pen.fillText('开始游戏', this.gameWidth * 0.5, this.gameHeight * 0.5 + 22);
+					this.pen.strokeStyle = '#1E90FF';
+					this.pen.lineWidth = 0.8;
+					this.pen.strokeText('开始游戏', this.gameWidth * 0.5, this.gameHeight * 0.5 + 22);
+				}
+			}
+			//是否获胜
+			this.isWin = function () {
+				for (var $i = 0; $i < this.lv_x*this.lv_y-1; $i++) {
+					if (this.block[$i] != $i) {
+						return 0;
+					}
+				}
+				this.draw();
+				//clearTimeout(time);
+				//time = null;
+				//alert('恭喜完成，用时' + t / 100 + '秒');
+				alert("ok");
+				//重新初始化
+				this.isStart = false;
+				return 1;
+			}
+			//点击事件
+			this.click = function (even) {
+				var x = even.offsetX ;
+				var y = even.offsetY ;
+				var canve = this.canve;
+				if (!this.isStart && x <= this.gameWidth * 0.5 + 50 && x >= this.gameWidth * 0.5 - 50 && y >= this.gameHeight / 2 && y <= this.gameHeight / 2 + 30) {
+					this.start(this);
+				} else if (this.isStart) {
+					var l = Math.floor((x - 10) / this.pre_x);
+					if (l >= 0 && l < this.lv_x) {
+						var h = Math.floor((y - 80) / this.pre_y);
+						if (h >= 0 && h < this.lv_y) {
+							if (this.move(h, l)) {
+								this.isWin();
+							}
+						}
+					}
+				}
+				this.draw();
+			}
+			this.canva.onclick = ev=>this.click(ev);//绑定点击事件
+			this.draw();
+		} else {
+			alert('此浏览器不支持html5，游戏无法运行');
+		}
+	}
+	var game=new gameCore('mycanvas','../old/1.jpg',4,2);
+</script>
+</body>
+</html>
