@@ -1,0 +1,308 @@
+<!DOCTYPE hetm>
+<html>
+<head>
+	<meta charset="utf-8"/>
+	<title>基于原子守恒和矩阵运算的反应方程自动配平</title>
+	<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+</head>
+<body>
+<div id="main">
+	<div>
+		<span>反应物</span>
+		<div>
+			<span v-for="(data,i) in reactantArray" class="hxs">{{data.name}}<a href="javascript:void(0)" @click="handleDeleteReactant(i)">x</a></span>
+		</div>
+		<input v-model="newReactant"/><input type="button" value="添加" @click="handleAddNewReactant">
+	</div>
+	<div>
+		<span>生成物</span>
+		<div>
+			<span v-for="(data,i) in productsArray" class="hxs">{{data.name}}<a href="javascript:void(0)" @click="handleDeleteProducts(i)">x</a></span>
+		</div>
+		<input v-model="newProducts"/><input type="button" value="添加" @click="handleAddNewProducts">
+	</div>
+	<div>可能的反应方程：{{res}}</div>
+</div>
+<script type="text/javascript">
+	var vm = new Vue({
+		data: {
+			reactantArray:[],
+			productsArray:[],
+			newReactant:"",
+			newProducts:""
+		},
+		computed:{
+			res(){
+				var atoms=[],i,j,k;
+				var all=this.reactantArray.concat(this.productsArray);
+				//取出所有原子
+				for(i=0;i<all.length;i++){
+					for(j in all[i].info){
+						if(atoms.indexOf(j)==-1) atoms.push(j);
+					}
+				}
+				var matrix=[];//线性方程矩阵
+				for(i=0;i<atoms.length;i++){
+					var atom=atoms[i];
+					var row=[];
+					for(j=0;j<all.length;j++){
+						row.push([(all[j].info[atom]||0)*(j<this.reactantArray.length?-1:1),1]);
+					}
+					matrix.push(row);
+				}
+				this._matrixShow(matrix,"初始矩阵");
+
+				//矩阵计算
+
+				//处理，避免出现0的行
+				for(i=0;i<matrix.length-1;i++){
+					var baseRow=matrix[i];
+					for(j=i+1;j<matrix.length;j++){
+						var addRow=matrix[j];
+						for(k=0;k<baseRow.length;k++){
+							baseRow[k]=this._add(baseRow[k],addRow[k]);
+						}
+					}
+				}
+				this._matrixShow(matrix,"加法后的矩阵");
+
+				//正式计算
+				for(i=0;i<matrix.length;i++){
+					var row=matrix[i];
+					for(j=0;j<i;j++){
+						var times=row[j];
+						for(k=0;k<row.length;k++){
+							row[k]=this._sub(row[k],this._mul(matrix[j][k],times));
+						}
+					}
+
+					//是否全0的判断
+					for(j=0;j<row.length;j++){
+						if(row[j][0]!=0) break;
+					}
+					if(j==row.length){
+						//说明这一行都是0了
+						matrix.splice(i,1);
+						i--;
+						continue;
+					}
+					if(row[i][0]==0) return "方程存在被消去的项，求解失败";
+
+					//判断矩阵的秩过高，那方程肯定无解，直接返回
+					if(i>=row.length-1){
+						this._matrixShow(matrix,"失败的矩阵");
+						return "矩阵秩大于等于方程阶数，方程无解";
+					}
+
+					var times=row[j];
+					for(var j=i;j<row.length;j++){
+						row[j]=this._div(row[j],times);
+					}
+					this._matrixShow(matrix,"第 "+i+" 次计算的结果");
+				}
+				this._matrixShow(matrix,"矩阵计算结果");
+				if(matrix.length==0){
+					return "方程所有各项均被约分，求解失败";
+				}
+				if(matrix.length!=matrix[0].length-1){
+					return "方程解不唯一";
+				}
+
+				//矩阵转换完毕，开始计算结果
+				//return "计算成功";
+				//for(i=0;i<all.length;i)
+				resArray=[];
+				resArray.length=all.length;
+				var temp=matrix.pop();
+				var tt=this._div(temp[temp.length-1],temp[temp.length-2]);
+				resArray[resArray.length-1]=tt[1];
+				resArray[resArray.length-2]=-tt[0];
+				for(i=matrix.length-1;i>=0;i--){
+					var l=[0,1];
+					for(j=i+1;j<matrix[i].length;j++){
+						l=this._add(l,this._mul([resArray[j],1],matrix[i][j]));
+					}
+					console.log(l);
+					if(l[0]==0){
+						return "矩阵方程求解失败，"+(i<this.reactantArray.length?"反应物":"生成物")+"第"+(i+1)+"项可能不应存在";
+					}
+					tt=this._div(matrix[i][i],l);
+					console.log("tt=",tt);
+					resArray[i]=tt[1];
+					//res[res.length-2]=tt[1];
+					for(j=i+1;j<resArray.length;j++){
+						resArray[j]*=-tt[0];
+					}
+					console.log(resArray);
+				}
+
+				//组织结果
+				var res=""
+				for(i=0;i<resArray.length;i++){
+					if(i!=0){
+						if(i==this.reactantArray.length) res+=" == ";
+						else res+=" + ";
+					}
+					res+=(resArray[i]==1?"":resArray[i])+all[i].name;
+				}
+				return res;
+			}
+		},
+		methods:{
+			_simplification(number){
+				var f1=number[0]<0;
+				var f2=number[1]<0;
+				if(f1){
+					number[0]=-number[0];
+				}
+				if(f2){
+					number[1]=-number[1];
+				}
+				if(number[0]!=0&&number[1]%number[0]==0){
+					number[1]/=number[0];
+					number[0]=1;
+				}else if(number[1]!=0&&number[0]%number[1]==0){
+					number[0]/=number[1];
+					number[1]=1;
+				}else{
+					var t=number[0]>number[1]?number[1]:number[0];
+					for(var i=parseInt(t/2)+1;i>1;i--){
+						if(number[0]%i==0&&number[1]%i==0){
+							number[0]/=i;
+							number[1]/=i;
+						}
+					}
+				}
+				if(f1^f2){
+					number[0]=-number[0];
+				}
+				return number;
+			},
+			_add(a,b){
+				return this._simplification([a[0]*b[1]+b[0]*a[1],a[1]*b[1]]);
+			},
+			_sub(a,b){
+				return this._add(a,[-b[0],b[1]]);
+			},
+			_mul(a,b){
+				return this._simplification([a[0]*b[0],a[1]*b[1]]);
+			},
+			_div(a,b){
+				if(b[0]==0){
+					throw new Error("不能除0");
+				}
+				return this._mul(a,[b[1],b[0]]);
+			},
+			_matrixShow(matrix,title){
+				var data="";
+				for(var i=0;i<matrix.length;i++){
+					var row=matrix[i];
+					for(var j=0;j<row.length;j++){
+						data+=row[j][0]+"/"+row[j][1]+"\t\t";
+					}
+					data+="\n";
+				}
+				console.info(title+"\n"+data);
+			},
+			_pauseMolecular(data){
+				var res={name:data,info:{},error:""};
+				var atom="";
+				var number=0;
+				for(var i=0;i<data.length;i++){
+					if(data[i].toLowerCase()==data[i]){
+						if(atom==""){
+							res.error="化学式请用元素开头";
+							return res;
+						}
+						if(data[i].toUpperCase()==data[i]){//不是大写也不是小写，可能是数字也可能是特殊字符
+							if(data[i]>=0&&data[i]<=9){
+								number*=10;
+								number+=data[i]*1;
+							}else{
+								res.error="非法字符"+data[i];
+								return res;
+							}
+						}else{
+							if(number!=0){
+								res.error="数字后面应该为新的元素符号";
+								return res;
+							}
+							//小写字母拼接在原子名之后
+							atom+=data[i];
+						}
+					}else{
+						if(atom!=""){
+							res.info[atom]=(res.info[atom]||0)+(number||1);
+						}
+						//是大写字母，新元素的开始
+						atom=data[i];
+						number=0;
+					}
+				}
+				if(atom==""){
+					res.error="分子式不能为空";
+				}else{
+					res.info[atom]=(res.info[atom]||0)+(number||1);
+				}
+				console.log(res);
+				return res;
+			},
+			handleAddNewReactant(){
+				var temp=this._pauseMolecular(this.newReactant);
+				if(temp.error){
+					alert(temp.error);
+					return;
+				}
+				this.reactantArray.push(temp);
+				this.newReactant="";
+			},
+			handleAddNewProducts(){
+				var temp=this._pauseMolecular(this.newProducts);
+				if(temp.error){
+					alert(temp.error);
+					return;
+				}
+				this.productsArray.push(temp);
+				this.newProducts="";
+			},
+			handleDeleteReactant(index){
+				this.reactantArray.splice(index,1);
+			},
+			handleDeleteProducts(index){
+				this.productsArray.splice(index,1);
+			}
+		},
+		el:document.getElementById("main"),
+		created(){
+			this.reactantArray.push(this._pauseMolecular("HCl"));
+			this.reactantArray.push(this._pauseMolecular("NaOH"));
+			this.productsArray.push(this._pauseMolecular("H2O"));
+			this.productsArray.push(this._pauseMolecular("NaCl"));
+		}
+	});
+</script>
+<style type="text/css">
+	.hxs{
+		background: #8CF;
+		border-radius: 5px;
+		margin: 2px;
+		padding: 2px 5px;
+		display: inline-block;
+	}
+	.hxs a{
+		width: 15px;
+		height: 15px;
+		line-height: 15px;
+		font-size: 15px;
+		padding: 0;
+		transform: scale(0.8);
+		border-radius: 15px;
+		border: solid #08F 1px;
+		color: #08F;
+		text-align: center;
+		margin: 2px;
+		display: inline-block;
+	}
+</style>
+</body>
+</html>
