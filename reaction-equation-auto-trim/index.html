@@ -4,20 +4,21 @@
 	<meta charset="utf-8"/>
 	<title>基于原子守恒和矩阵运算的反应方程自动配平</title>
 	<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+	<script src="./chemical-formula.js"></script>
 </head>
 <body>
 <div id="main">
 	<div>
 		<span>反应物</span>
 		<div>
-			<span v-for="(data,i) in reactantArray" class="hxs">{{data.name}}<a href="javascript:void(0)" @click="handleDeleteReactant(i)">x</a></span>
+			<span v-for="(data,i) in reactantArray" class="hxs">{{data.name}}<a href="javascript:void(0)" @click="handleDeleteReactant(i)">X</a></span>
 		</div>
 		<input v-model="newReactant"/><input type="button" value="添加" @click="handleAddNewReactant">
 	</div>
 	<div>
 		<span>生成物</span>
 		<div>
-			<span v-for="(data,i) in productsArray" class="hxs">{{data.name}}<a href="javascript:void(0)" @click="handleDeleteProducts(i)">x</a></span>
+			<span v-for="(data,i) in productsArray" class="hxs">{{data.name}}<a href="javascript:void(0)" @click="handleDeleteProducts(i)">X</a></span>
 		</div>
 		<input v-model="newProducts"/><input type="button" value="添加" @click="handleAddNewProducts">
 	</div>
@@ -98,7 +99,7 @@
 					for(var j=i;j<row.length;j++){
 						row[j]=this._div(row[j],times);
 					}
-					this._matrixShow(matrix,"第 "+i+" 次计算的结果");
+					this._matrixShow(matrix,"第 "+(i+1)+" 次计算的结果");
 				}
 				this._matrixShow(matrix,"矩阵计算结果");
 				if(matrix.length==0){
@@ -204,66 +205,21 @@
 				}
 				console.info(title+"\n"+data);
 			},
-			_pauseMolecular(data){
-				var res={name:data,info:{},error:""};
-				var atom="";
-				var number=0;
-				for(var i=0;i<data.length;i++){
-					if(data[i].toLowerCase()==data[i]){
-						if(atom==""){
-							res.error="化学式请用元素开头";
-							return res;
-						}
-						if(data[i].toUpperCase()==data[i]){//不是大写也不是小写，可能是数字也可能是特殊字符
-							if(data[i]>=0&&data[i]<=9){
-								number*=10;
-								number+=data[i]*1;
-							}else{
-								res.error="非法字符"+data[i];
-								return res;
-							}
-						}else{
-							if(number!=0){
-								res.error="数字后面应该为新的元素符号";
-								return res;
-							}
-							//小写字母拼接在原子名之后
-							atom+=data[i];
-						}
-					}else{
-						if(atom!=""){
-							res.info[atom]=(res.info[atom]||0)+(number||1);
-						}
-						//是大写字母，新元素的开始
-						atom=data[i];
-						number=0;
-					}
-				}
-				if(atom==""){
-					res.error="分子式不能为空";
-				}else{
-					res.info[atom]=(res.info[atom]||0)+(number||1);
-				}
-				console.log(res);
-				return res;
-			},
 			handleAddNewReactant(){
-				var temp=this._pauseMolecular(this.newReactant);
-				if(temp.error){
-					alert(temp.error);
-					return;
+				try{
+					this.reactantArray.push(new ChemicalFormula(this.newReactant));
+					this.newReactant="";
+				}catch(e){
+					alert(e);
 				}
-				this.reactantArray.push(temp);
-				this.newReactant="";
 			},
 			handleAddNewProducts(){
-				var temp=this._pauseMolecular(this.newProducts);
-				if(temp.error){
-					alert(temp.error);
-					return;
+				try{
+					this.productsArray.push(new ChemicalFormula(this.newProducts));
+					this.newProducts="";
+				}catch(e){
+					alert(e);
 				}
-				this.productsArray.push(temp);
-				this.newProducts="";
 			},
 			handleDeleteReactant(index){
 				this.reactantArray.splice(index,1);
@@ -274,10 +230,6 @@
 		},
 		el:document.getElementById("main"),
 		created(){
-			this.reactantArray.push(this._pauseMolecular("HCl"));
-			this.reactantArray.push(this._pauseMolecular("NaOH"));
-			this.productsArray.push(this._pauseMolecular("H2O"));
-			this.productsArray.push(this._pauseMolecular("NaCl"));
 		}
 	});
 </script>
@@ -293,7 +245,7 @@
 		width: 15px;
 		height: 15px;
 		line-height: 15px;
-		font-size: 15px;
+		font-size: 12px;
 		padding: 0;
 		transform: scale(0.8);
 		border-radius: 15px;
@@ -302,6 +254,7 @@
 		text-align: center;
 		margin: 2px;
 		display: inline-block;
+		text-decoration:none;
 	}
 </style>
 </body>
