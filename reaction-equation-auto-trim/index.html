@@ -23,6 +23,14 @@
 		<input v-model="newProducts"/><input type="button" value="添加" @click="handleAddNewProducts">
 	</div>
 	<div>可能的反应方程：{{res}}</div>
+	<div><a href="https://blog.thestarweb.cn/essay/id/133">配平原理（原子守恒与矩阵方程）</a></div>
+	<div>
+		<div>
+			<p>2020.08.20更新：</p>
+			<p>修正部分特殊符号被识别成数字的问题</p>
+			<p>现在空格“ ”和加号“+”会被识别成分隔符</p>
+		</div>
+	</div>
 </div>
 <script type="text/javascript">
 	var vm = new Vue({
@@ -205,9 +213,23 @@
 				}
 				console.info(title+"\n"+data);
 			},
+			_parseChemicalFormulas(str){
+				var res=[];
+				var datas=str.split(/[ +]/);
+				for(var i in datas){
+					if(datas[i]){
+						// try{
+							res.push(new ChemicalFormula(datas[i]));
+						// }catch(e){
+						// 	alert(e);
+						// }
+					}
+				}
+				return res;
+			},
 			handleAddNewReactant(){
 				try{
-					this.reactantArray.push(new ChemicalFormula(this.newReactant));
+					this.reactantArray=this.reactantArray.concat(this._parseChemicalFormulas(this.newReactant));
 					this.newReactant="";
 				}catch(e){
 					alert(e);
@@ -215,7 +237,7 @@
 			},
 			handleAddNewProducts(){
 				try{
-					this.productsArray.push(new ChemicalFormula(this.newProducts));
+					this.productsArray=this.productsArray.concat(this._parseChemicalFormulas(this.newProducts));
 					this.newProducts="";
 				}catch(e){
 					alert(e);
