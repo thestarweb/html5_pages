@@ -45,7 +45,7 @@ ChemicalFormula=function(data){
 				return;
 			}
 			if(data[i].toUpperCase()==data[i]){//不是大写也不是小写，可能是数字也可能是特殊字符
-				if(data[i]>=0&&data[i]<=9){
+				if(data[i]==parseInt(data[i])){
 					number*=10;
 					number+=data[i]*1;
 				}else{
