@@ -6,12 +6,16 @@ var SMidiFile=(function(){
 		var statsCatch={};//记录按键
 		var posList=[];
 		this._events=events;
+		var tickNumber=0;
 		Object.defineProperty(this,"pushEvent",{
 			value:function(even){
+			// even.evenTick=tickNumber;
+			// tickNumber+=even.deltaTime;
 				events.push(even);
 				if(even.subtype=="programChange"){
 					nowtype=even.programNumber;
 				}else if(even.subtype=="noteOn"){
+					console.log(sound[even.noteNumber%sound.length]+parseInt(even.noteNumber/sound.length),even.deltaTime);
 					if(!statsCatch[even.noteNumber]){
 						var pos=Object.keys(statsCatch).length
 						if(posList.length)pos=posList.pop();
@@ -62,8 +66,8 @@ var SMidiFile=(function(){
 		for(var i=0;i<16;i++) channels[i]=new MidiChannel();
 		for(var j=0;j<data.length;j++){
 			var item=data[j];
-			item.evenTick=tickNumber;
 			tickNumber+=item.deltaTime;
+			item.evenTick=tickNumber;
 			switch(item.type){
 				case "channel":
 					// switch(item.subtype){

@@ -35,7 +35,8 @@
 			"叮当铃","Agogo","钢鼓","木鱼","太鼓","通通鼓","合成鼓","铜钹",
 			"吉他换把杂音","呼吸声","海浪声","鸟鸣","电话铃","直升机","鼓掌声","枪声",
 		];
-		var sound=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+		//var sound=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+		var sound=["1-","1#-","2-","2#-","3-","4-","4#-","5-","4#-","6-","6#-","7-"];
 		var show=(function(){
 			//console.log(s);
 			var startX=0;
@@ -84,7 +85,6 @@
 				}
 			}
 			canvas.onmousewheel=function(ev){
-				console.log(ev);
 				if(ev.ctrlKey){
 					if(ev.wheelDelta<0){
 						sizeX*=0.8;
@@ -150,8 +150,6 @@
 				if(exname="mid"){
 					var reader = new FileReader();
 					reader.onload=function(ev){
-						//console.log(e.dataTransfer.files[i],ev);
-						console.log(this.result);
 						window.s=new SMidiFile(this.result);
 						show.draw();
 					}
