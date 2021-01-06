@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html style="width: 100%;height: 100%;">
+<head>
+	<title>mid</title>
+	<meta charset="utf-8">
+	<script src="../myScript/myScript2.js"></script>
+	<script src="./stream.js"></script>
+	<script src="./mid-file.js"></script>
+	<script src="./star-midi.js"></script>
+	<style type="text/css">
+		*{
+			margin: 0;
+			padding: 0;
+		}
+	</style>
+</head>
+<body style="width: 100%;height: 100%;">
+	<canvas style="width: 100%;height: 100%;" id="canvas"></canvas>
+	<script type="text/javascript">
+		var type=[
+			"大钢琴","明亮的钢琴","电钢琴","酒吧钢琴","柔和电钢琴","和声效果电钢琴","拨弦古钢琴","击弦古钢琴",
+			"钢片琴","钟琴","八音盒","颤音琴","马林巴","木琴","管钟","大扬琴",
+			"击杆风琴","打击式风琴","摇滚风琴","教堂风琴","簧管风琴","手风琴","口琴","探戈手风琴",
+			"尼龙弦吉他","钢弦吉他","爵士电吉他","清音电吉他","闷音电吉他","驱动效果电吉他","失真电吉他","吉他和音",
+			"大贝司","电贝司（指弹）","电贝司（拨片）","无品贝司","击掌1","击掌2","合成1","合成2",
+			"小提琴","中提琴","大提琴","低音大提琴","击掌1","击掌2","竖琴","定音鼓",
+			"弦乐合奏1","弦乐合奏2","合成弦乐合奏1","合成弦乐合奏2","人声 啊","人声 嘟","合成人声","管弦乐敲击合奏",
+			"小号","长号","大号","加弱音器小号","圆号","铜管组","合成铜管音色1","合成铜管音色2",
+			"高音萨克斯","次中音萨克斯","中音萨克斯","低音萨克斯","双簧管","英国管","巴松","单簧管",
+			"短笛","长笛","竖笛","排箫","Bottle Blow","日本尺八","口哨","奥卡雷那",
+			"合成主音1方波","合成主音2锯齿波","合成主音3","合成主音4","合成主音5","合成主音6人声","合成主音7平行五度","合成主音8贝司加主音",
+			"合成音色1新世界","合成音色2温暖","合成音色3","合成音色4合唱","合成音色5","合成音色6金属声","合成音色7光环","合成音色8",
+			"合成效果1雨声","合成效果2音轨","合成效果3水晶","合成效果4大气","合成效果5明亮","合成效果6鬼怪","合成效果7回声","合成效果8科幻",
+			"西塔尔","班卓琴","三味线","十三弦筝","卡林巴","风笛","民族提琴","山奈",
+			"叮当铃","Agogo","钢鼓","木鱼","太鼓","通通鼓","合成鼓","铜钹",
+			"吉他换把杂音","呼吸声","海浪声","鸟鸣","电话铃","直升机","鼓掌声","枪声",
+		];
+		var sound=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+		var show=(function(){
+			//console.log(s);
+			var startX=0;
+			var startY=0;
+			var sizeX=1;
+			var sizeY=1;
+			var canvas=document.getElementById("canvas");
+			var resize=function(){
+				canvas.width=canvas.offsetWidth;
+				canvas.height=canvas.offsetHeight;
+			}
+			resize();
+			var nodeHeight=20;
+			var viewStart=0;
+			var c=canvas.getContext("2d");
+			var draw=function(){
+				c.clearRect(0,0,canvas.width,canvas.height); 
+				var usedTracks=s.usedTracks;
+				var dy=0;
+				for(var i=0;i<usedTracks.length;i++){
+					var track=s.getTrack(usedTracks[i].id);
+					var usedChannels=track.usedChannels;
+					for(var j=0;j<usedChannels.length;j++){
+						var channel=track.getChannel(usedChannels[j].id);
+						var list=channel.getDataAABB(viewStart,viewStart+canvas.width/sizeX-startX);
+						//console.log(viewStart);
+						for(var k=0;k<list.length;k++){
+							//fillStyle()
+							var x=(list[k].start-viewStart)*sizeX+startX;//
+							var y=(list[k].pos*nodeHeight+dy)*sizeY+startY;
+							c.strokeStyle="#000";
+							c.fillStyle="#08f";
+							c.beginPath();
+							c.rect(x,y,(list[k].end-list[k].start)*sizeX,nodeHeight*sizeY);
+							c.fill();
+							c.stroke();
+							c.textBaseline="top";
+							c.fillStyle="#000";
+							c.font=nodeHeight*sizeY+"px Arial";
+							var text=sound[list[k].noteNumber%sound.length]+parseInt(list[k].noteNumber/sound.length);
+							c.beginPath();
+							c.fillText(text,x,y);
+						}
+						dy+=nodeHeight*channel.posNum+2;
+					}
+				}
+			}
+			canvas.onmousewheel=function(ev){
+				console.log(ev);
+				if(ev.ctrlKey){
+					if(ev.wheelDelta<0){
+						sizeX*=0.8;
+					}else{
+						sizeX/=0.8;
+					}
+				}else{
+					viewStart-=ev.wheelDelta/sizeX;
+					if(viewStart<0)viewStart=0;
+					if(viewStart>s.tickNumber) viewStart=s.tickNumber;
+				}
+				draw();
+				return false;
+			}
+			//draw();
+			return{
+				resize:resize,
+				draw:draw
+			}
+		})();
+		// var xhr=$.ajax();
+		// xhr.page="./SKYCITY1.MID";
+		// xhr.ajax.overrideMimeType('text/plain; charset=x-user-defined');
+		// xhr.callback=function(aa){
+		// 	var t = aa.text || '';
+		// 	var ff = [];
+		// 	var mx = t.length;
+		// 	var scc = String.fromCharCode;
+		// 	for (var z = 0; z < mx; z++) {
+		// 		ff[z] = scc(t.charCodeAt(z) & 255);
+		// 	}
+		// 	var file=MidiFile(ff.join(''));
+		// 	console.log(file);
+		// 	// var data=file.tracks[8];
+		// 	// for(var i=0;i<data.length;i++){
+		// 	// 	if(data[i].type=="channel"&&data[i].subtype=="noteOn"){
+		// 	// 		var m=data[i].noteNumber;//+6;
+		// 	// 		if(m/sound.length<5)continue;
+		// 	// 		//if(data[i].channel!=11) continue;
+		// 	// 		console.log(data[i],parseInt(m/sound.length),sound[m%sound.length]);
+		// 	// 	}
+		// 	// }
+		// 	window.s=new SMidiFile(ff.join(''));
+		// 	show.draw();
+		// }
+		// xhr.send();
+
+		document.addEventListener("dragleave", function(e){  
+			e.stopPropagation();
+			e.preventDefault();
+		}, false);
+		document.addEventListener("dragover", function(e){  
+			e.stopPropagation();
+			e.preventDefault();
+		}, false);
+		document.addEventListener("drop", function(e){  
+			e.stopPropagation();  
+			e.preventDefault();
+			if(e.dataTransfer.files.length==0) return;
+			for(var i=0;i<e.dataTransfer.files.length;i++){
+				var filename=e.dataTransfer.files[i].name;
+				var exname=filename.substr(filename.lastIndexOf("."));
+				if(exname="mid"){
+					var reader = new FileReader();
+					reader.onload=function(ev){
+						//console.log(e.dataTransfer.files[i],ev);
+						console.log(this.result);
+						window.s=new SMidiFile(this.result);
+						show.draw();
+					}
+					reader.readAsBinaryString(e.dataTransfer.files[i]);
+					return;
+				}
+			}
+		}, false);
+
+	</script>
+</body>
+</html>
