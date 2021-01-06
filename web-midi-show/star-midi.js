@@ -101,6 +101,7 @@ var SMidiFile=(function(){
 	}
 	return function(data){
 		var file=MidiFile(data);
+		console.log(file);
 		//this.file=file;
 
 		var data=[];
@@ -141,6 +142,11 @@ var SMidiFile=(function(){
 					}
 				}
 				return number;
+			}
+		});
+		Object.defineProperty(this,"ticksPerBeat",{
+			get:function(){
+				return file.header.ticksPerBeat;
 			}
 		});
 	}

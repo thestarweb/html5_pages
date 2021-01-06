@@ -35,12 +35,12 @@
 			"叮当铃","Agogo","钢鼓","木鱼","太鼓","通通鼓","合成鼓","铜钹",
 			"吉他换把杂音","呼吸声","海浪声","鸟鸣","电话铃","直升机","鼓掌声","枪声",
 		];
-		//var sound=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
-		var sound=["1-","1#-","2-","2#-","3-","4-","4#-","5-","4#-","6-","6#-","7-"];
+		var sound=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+		//var sound=["1-","1#-","2-","2#-","3-","4-","4#-","5-","4#-","6-","6#-","7-"];
 		var show=(function(){
 			//console.log(s);
 			var startX=0;
-			var startY=0;
+			var startY=10;
 			var sizeX=1;
 			var sizeY=1;
 			var canvas=document.getElementById("canvas");
@@ -62,13 +62,13 @@
 						var usedChannels=track.usedChannels;
 						for(var j=0;j<usedChannels.length;j++){
 							var channel=track.getChannel(usedChannels[j].id);
-							var list=channel.getDataAABB(viewStart,viewStart+canvas.width/sizeX-startX);
+							var list=channel.getDataAABB(viewStart,viewStart+(canvas.width-startX)/sizeX);
 							//console.log(viewStart);
 							for(var k=0;k<list.length;k++){
 								//fillStyle()
 								var x=(list[k].start-viewStart)*sizeX+startX;//
 								var y=(list[k].pos*nodeHeight+dy)*sizeY+startY;
-								c.strokeStyle="#000";
+								c.strokeStyle="#666";
 								c.fillStyle="#08f";
 								c.beginPath();
 								c.rect(x,y,(list[k].end-list[k].start)*sizeX,nodeHeight*sizeY);
@@ -83,6 +83,16 @@
 							}
 							dy+=nodeHeight*channel.posNum+2;
 						}
+					}
+					var ticksPerBeat=s.ticksPerBeat;
+					var beat=parseInt(viewStart/ticksPerBeat)*ticksPerBeat-viewStart;
+					c.strokeStyle="#666";
+					while(beat<(canvas.width-startX)/sizeX){
+						c.beginPath();
+						c.moveTo(startX+beat*sizeX,startY);
+						c.lineTo(startX+beat*sizeX,canvas.height);
+						c.stroke();
+						beat+=ticksPerBeat;
 					}
 				}
 			}
