@@ -15,7 +15,6 @@ var SMidiFile=(function(){
 				if(even.subtype=="programChange"){
 					nowtype=even.programNumber;
 				}else if(even.subtype=="noteOn"){
-					console.log(sound[even.noteNumber%sound.length]+parseInt(even.noteNumber/sound.length),even.deltaTime);
 					if(!statsCatch[even.noteNumber]){
 						var pos=Object.keys(statsCatch).length
 						if(posList.length)pos=posList.pop();

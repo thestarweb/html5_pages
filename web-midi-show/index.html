@@ -53,39 +53,50 @@
 			var viewStart=0;
 			var c=canvas.getContext("2d");
 			var draw=function(){
-				c.clearRect(0,0,canvas.width,canvas.height); 
-				var usedTracks=s.usedTracks;
-				var dy=0;
-				for(var i=0;i<usedTracks.length;i++){
-					var track=s.getTrack(usedTracks[i].id);
-					var usedChannels=track.usedChannels;
-					for(var j=0;j<usedChannels.length;j++){
-						var channel=track.getChannel(usedChannels[j].id);
-						var list=channel.getDataAABB(viewStart,viewStart+canvas.width/sizeX-startX);
-						//console.log(viewStart);
-						for(var k=0;k<list.length;k++){
-							//fillStyle()
-							var x=(list[k].start-viewStart)*sizeX+startX;//
-							var y=(list[k].pos*nodeHeight+dy)*sizeY+startY;
-							c.strokeStyle="#000";
-							c.fillStyle="#08f";
-							c.beginPath();
-							c.rect(x,y,(list[k].end-list[k].start)*sizeX,nodeHeight*sizeY);
-							c.fill();
-							c.stroke();
-							c.textBaseline="top";
-							c.fillStyle="#000";
-							c.font=nodeHeight*sizeY+"px Arial";
-							var text=sound[list[k].noteNumber%sound.length]+parseInt(list[k].noteNumber/sound.length);
-							c.beginPath();
-							c.fillText(text,x,y);
+				if(s){
+					c.clearRect(0,0,canvas.width,canvas.height); 
+					var usedTracks=s.usedTracks;
+					var dy=0;
+					for(var i=0;i<usedTracks.length;i++){
+						var track=s.getTrack(usedTracks[i].id);
+						var usedChannels=track.usedChannels;
+						for(var j=0;j<usedChannels.length;j++){
+							var channel=track.getChannel(usedChannels[j].id);
+							var list=channel.getDataAABB(viewStart,viewStart+canvas.width/sizeX-startX);
+							//console.log(viewStart);
+							for(var k=0;k<list.length;k++){
+								//fillStyle()
+								var x=(list[k].start-viewStart)*sizeX+startX;//
+								var y=(list[k].pos*nodeHeight+dy)*sizeY+startY;
+								c.strokeStyle="#000";
+								c.fillStyle="#08f";
+								c.beginPath();
+								c.rect(x,y,(list[k].end-list[k].start)*sizeX,nodeHeight*sizeY);
+								c.fill();
+								c.stroke();
+								c.textBaseline="top";
+								c.fillStyle="#000";
+								c.font=nodeHeight*sizeY+"px Arial";
+								var text=sound[list[k].noteNumber%sound.length]+parseInt(list[k].noteNumber/sound.length);
+								c.beginPath();
+								c.fillText(text,x,y);
+							}
+							dy+=nodeHeight*channel.posNum+2;
 						}
-						dy+=nodeHeight*channel.posNum+2;
 					}
 				}
 			}
 			canvas.onmousewheel=function(ev){
-				if(ev.ctrlKey){
+				//console.log(ev);
+				if(ev.altKey){
+					if(ev.ctrlKey){
+						if(ev.wheelDelta<0){
+							sizeY*=0.8;
+						}else{
+							sizeY/=0.8;
+						}
+					}
+				}if(ev.ctrlKey){
 					if(ev.wheelDelta<0){
 						sizeX*=0.8;
 					}else{
