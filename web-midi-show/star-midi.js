@@ -43,6 +43,9 @@ var SMidiFile=(function(){
 		Object.defineProperty(this,"posNum",{
 			get:function(){return posList.length}
 		});
+		Object.defineProperty(this,"totalKeyNum",{
+			get:function(){return key.length}
+		});
 		Object.defineProperty(this,"getDataAABB",{
 			value:function(start,end){
 				var data=[];
@@ -98,6 +101,15 @@ var SMidiFile=(function(){
 			writable: false,
 			enumerable:false
 		});
+		Object.defineProperty(this,"totalKeyNum",{
+			get:function(){
+				var t=0;
+				for(var i=0;i<channels.length;i++){
+					t+=channels[i].totalKeyNum
+				}
+				return t;
+			}
+		});
 	}
 	return function(data){
 		var file=MidiFile(data);
@@ -147,6 +159,15 @@ var SMidiFile=(function(){
 		Object.defineProperty(this,"ticksPerBeat",{
 			get:function(){
 				return file.header.ticksPerBeat;
+			}
+		});
+		Object.defineProperty(this,"totalKeyNum",{
+			get:function(){
+				var t=0;
+				for(var i=0;i<data.length;i++){
+					t+=data[i].totalKeyNum
+				}
+				return t;
 			}
 		});
 	}

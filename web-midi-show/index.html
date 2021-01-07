@@ -73,15 +73,20 @@
 				type:"",
 				data:null
 			}
-			var viewLeft=0;
+			var viewLeft=100;
 			var viewTop=10;
 			var viewRight=10;
-			var viewBotton=10;
+			var viewBottom=20;
+			var viewWidth=0;
+			var viewHeight=0;
 			var sizeX=1;
 			var sizeY=1;
 			var nodeHeight=20;
 			var viewStart=0;
 			var c=canvas.getContext("2d");
+			var checkMouseIn=function(x,y,w,h){
+				return mousePoseX>x&&mousePoseX<w+x&&mousePoseY>y&&h+y
+			}
 			var draw=function(){
 				//清空画布并设置宽度与高度
 				canvas.width=canvas.offsetWidth;
@@ -89,7 +94,12 @@
 				c.textBaseline="top";
 				//清空鼠标选择的物品类型
 				selInfo.type="";
+				viewWidth=canvas.width-viewLeft-viewRight;
+				viewHeight=canvas.height-viewTop-viewBottom;
 				if(s){
+					//检查显示范围
+					if(viewStart+viewWidth/sizeX>s.tickNumber) viewStart=s.tickNumber-viewWidth/sizeX;
+					if(viewStart<0)viewStart=0;
 					//c.clearRect(0,0,canvas.width,canvas.height); 
 					//绘制音符
 					var usedTracks=s.usedTracks;
@@ -136,6 +146,33 @@
 						beat+=ticksPerBeat;
 					}
 				}
+				//绘制滚动条
+				if(s){
+					var barSize=20;
+					c.strokeStyle="#888";
+					c.fillStyle="#EEE";
+					c.beginPath();
+					//c.rect(viewLeft,canvas.height-viewBottom+barSize,canvas.width+viewRight+viewLeft,barSize);
+					c.rect(viewLeft,viewTop+viewHeight-barSize,canvas.width-viewRight-viewLeft,barSize);
+					c.fill();
+					c.stroke();
+					c.fillStyle="#F00";
+					c.beginPath();
+					console.log(
+						viewLeft+(viewStart/s.tickNumber)*(viewWidth),
+						viewTop+viewHeight-barSize,
+						viewWidth/sizeX/s.tickNumber*viewWidth,
+						barSize
+					)
+					c.rect(
+						viewLeft+(viewStart/s.tickNumber)*(viewWidth),
+						viewTop+viewHeight-barSize,
+						viewWidth/sizeX/s.tickNumber*viewWidth,
+						barSize
+					);
+					c.fill();
+					c.stroke();
+				}
 
 				//绘制界面上状态栏
 				var barSize=20;
@@ -147,8 +184,10 @@
 				//绘制当前时间
 				c.fillStyle="#000";
 				c.font=barSize+"px 微软雅黑";
-				var time=mousePoseX*sizeX+viewStart;
-				c.fillText(parseInt(time/60/100)+":"+parseInt(time/100)%60+"."+(time%100),1,canvas.height-barSize+1);
+				if(checkMouseIn(viewLeft,viewRight,viewWidth,viewHeight)){
+					var time=parseInt(((mousePoseX-viewLeft)/sizeX+viewStart)/1);
+					c.fillText(parseInt(time/60/100)+":"+parseInt(time/100)%60+"."+(time%100),1,canvas.height-barSize+1);
+				}
 				if(selInfo.type=="key"){
 					// console.log(type[selInfo.data.programNumber]);
 					c.fillText(type[selInfo.data.programNumber],160,canvas.height-barSize+1);
@@ -158,27 +197,35 @@
 			}
 			draw();
 			canvas.onmousewheel=function(ev){
-				//console.log(ev);
-				if(ev.altKey){
-					if(ev.ctrlKey){
-						if(ev.wheelDelta<0){
-							sizeY*=0.8;
-						}else{
-							sizeY/=0.8;
+				// console.log(ev.altKey);
+				if(s&&checkMouseIn(viewLeft,viewRight,viewWidth,viewHeight)){
+					if(ev.altKey){
+						if(ev.ctrlKey){
+							if(ev.wheelDelta<0){
+								sizeY*=0.8;
+							}else{
+								sizeY/=0.8;
+							}
 						}
-					}
-				}if(ev.ctrlKey){
-					if(ev.wheelDelta<0){
-						sizeX*=0.8;
+					}else if(ev.ctrlKey){
+						var olds=sizeX;
+						viewStart += (mousePoseX-viewLeft)/sizeX;
+						// console.log((mousePoseX-viewLeft)*sizeX);
+						if(ev.wheelDelta<0){
+							sizeX*=0.8;
+						}else{
+							sizeX/=0.8;
+						}
+						// setTimeout(()=>{
+						// 	console.log((mousePoseX-viewLeft)*sizeX);
+							viewStart -= (mousePoseX-viewLeft)/sizeX;
+						// },1000);
+						//viewStart+=(mousePoseX-viewLeft)/(olds-sizeX);
 					}else{
-						sizeX/=0.8;
+						viewStart-=ev.wheelDelta/sizeX;
 					}
-				}else{
-					viewStart-=ev.wheelDelta/sizeX;
-					if(viewStart<0)viewStart=0;
-					if(viewStart>s.tickNumber) viewStart=s.tickNumber;
+					//draw();
 				}
-				//draw();
 				return false;
 			}
 			return{
@@ -208,8 +255,9 @@
 		// 	// 		console.log(data[i],parseInt(m/sound.length),sound[m%sound.length]);
 		// 	// 	}
 		// 	// }
-		// 	window.s=new SMidiFile(ff.join(''));
-		// 	show.draw();
+		// 	// window.s=new SMidiFile(ff.join(''));
+		// 	// show.draw();
+		// 	show.load(ff.join(''));
 		// }
 		// xhr.send();
 
