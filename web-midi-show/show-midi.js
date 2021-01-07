@@ -38,16 +38,11 @@
 		var sound=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
 		//var sound=["1-","1#-","2-","2#-","3-","4-","4#-","5-","4#-","6-","6#-","7-"];
 		window.MindShow=function(id){
-			var s=null;
-			//console.log(s);
-			var canvas=document.getElementById(id);
-			var mousePoseX=0;
-			var mousePoseY=0;
-			canvas.onmousemove=function(ev){
-				//console.log(ev);
-				mousePoseX=ev.clientX;
-				mousePoseY=ev.clientY;
-			}
+
+			//对象全局变量定义
+			var s=null;//midi音乐数据
+			var canvas=document.getElementById(id);//画布
+			var mousePoseX=0, mousePoseY=0;//记录鼠标位置
 			// canvas.onclick=function(ev){
 			// 	draw();
 			// }
@@ -65,9 +60,33 @@
 			var sizeY=1;
 			var nodeHeight=20;
 			var viewStart=0;
-			var c=canvas.getContext("2d");
+
+			//基本函数
 			var checkMouseIn=function(x,y,w,h){
-				return mousePoseX>x&&mousePoseX<w+x&&mousePoseY>y&&h+y
+				return mousePoseX>x&&mousePoseX<w+x&&mousePoseY>y&&mousePoseY<h+y;
+			}
+
+			//绘制函数
+			var c=canvas.getContext("2d");
+			var drawKey=function(key,dy,showP){
+				if(showP) {
+					c.lineWidth=2;
+					console.log(dy);
+				}
+				var x=(key.start-viewStart)*sizeX+viewLeft;//
+				var y=(key.pos*nodeHeight+dy)*sizeY+viewTop;
+				c.strokeStyle=showP?"#A22":"#666";
+				c.fillStyle=type_color[key.programNumber];//"#08f";
+				c.beginPath();
+				c.rect(x,y,(key.end-key.start)*sizeX,nodeHeight*sizeY);
+				c.fill();
+				c.stroke();
+				c.fillStyle="#000";
+				c.font=nodeHeight*sizeY+"px Arial";
+				var text=sound[key.noteNumber%sound.length]+parseInt(key.noteNumber/sound.length);
+				c.beginPath();
+				c.fillText(text,x,y);
+				return checkMouseIn(x,y,(key.end-key.start)*sizeX,nodeHeight*sizeY);
 			}
 			var draw=function(){
 				//清空画布并设置宽度与高度
@@ -86,6 +105,7 @@
 					//绘制音符
 					var usedTracks=s.usedTracks;
 					var dy=0;
+					c.lineWidth=1;
 					for(var i=0;i<usedTracks.length;i++){
 						var track=s.getTrack(usedTracks[i].id);
 						var usedChannels=track.usedChannels;
@@ -95,22 +115,9 @@
 							//console.log(viewStart);
 							for(var k=0;k<list.length;k++){
 								//fillStyle()
-								var x=(list[k].start-viewStart)*sizeX+viewLeft;//
-								var y=(list[k].pos*nodeHeight+dy)*sizeY+viewTop;
-								c.strokeStyle="#666";
-								c.fillStyle=type_color[list[k].programNumber];//"#08f";
-								c.beginPath();
-								c.rect(x,y,(list[k].end-list[k].start)*sizeX,nodeHeight*sizeY);
-								c.fill();
-								c.stroke();
-								c.fillStyle="#000";
-								c.font=nodeHeight*sizeY+"px Arial";
-								var text=sound[list[k].noteNumber%sound.length]+parseInt(list[k].noteNumber/sound.length);
-								c.beginPath();
-								c.fillText(text,x,y);
-								if(mousePoseX>x&&mousePoseX<(list[k].end-list[k].start)*sizeX+x&&mousePoseY>y&&mousePoseY<nodeHeight*sizeY+y){
+								if(drawKey(list[k],dy)){
 									selInfo.type="key";
-									selInfo.data=list[k];
+									selInfo.data={key:list[k],dy:dy};
 								}
 							}
 							dy+=nodeHeight*channel.posNum+2;
@@ -140,12 +147,6 @@
 					c.stroke();
 					c.fillStyle="#F00";
 					c.beginPath();
-					console.log(
-						viewLeft+(viewStart/s.tickNumber)*(viewWidth),
-						viewTop+viewHeight-barSize,
-						viewWidth/sizeX/s.tickNumber*viewWidth,
-						barSize
-					)
 					c.rect(
 						viewLeft+(viewStart/s.tickNumber)*(viewWidth),
 						viewTop+viewHeight-barSize,
@@ -172,12 +173,16 @@
 				}
 				if(selInfo.type=="key"){
 					// console.log(type[selInfo.data.programNumber]);
-					c.fillText(type[selInfo.data.programNumber],160,canvas.height-barSize+1);
-					c.fillText(sound[selInfo.data.noteNumber%sound.length]+parseInt(selInfo.data.noteNumber/sound.length),90,canvas.height-barSize+1);
+					c.fillText(type[selInfo.data.key.programNumber],160,canvas.height-barSize+1);
+					c.fillText(sound[selInfo.data.key.noteNumber%sound.length]+parseInt(selInfo.data.key.noteNumber/sound.length),90,canvas.height-barSize+1);
+					//重新刷新选中节点
+					drawKey(selInfo.data.key,selInfo.data.dy,true);
 				}
 				requestAnimationFrame(draw);
 			}
 			draw();
+
+			//事件绑定
 			canvas.onmousewheel=function(ev){
 				// console.log(ev.altKey);
 				if(s&&checkMouseIn(viewLeft,viewRight,viewWidth,viewHeight)){
@@ -209,6 +214,11 @@
 					//draw();
 				}
 				return false;
+			}
+			canvas.onmousemove=function(ev){
+				//console.log(ev);
+				mousePoseX=ev.clientX;
+				mousePoseY=ev.clientY;
 			}
 			// return{
 			// 	draw:draw,
