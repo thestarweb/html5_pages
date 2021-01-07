@@ -35,26 +35,63 @@
 			"叮当铃","Agogo","钢鼓","木鱼","太鼓","通通鼓","合成鼓","铜钹",
 			"吉他换把杂音","呼吸声","海浪声","鸟鸣","电话铃","直升机","鼓掌声","枪声",
 		];
+		var type_color=[
+			"#08f","#08f","#08f","#08f","#08f","#08f","#08f","#08f",
+			"#08f","#08f","#08f","#08f","#08f","#08f","#FFF","#088",
+			"#088","#088","#088","#088","#088","#088","#C60","#088",
+			"#8F8","#8F8","#8F8","#8F8","#8F8","#8F8","#8F8","#8F8",
+			"#4A4","#4A4","#4A4","#4A4","#F88","#F88","#4A4","#4A4",
+			"#AF2","#AF2","#AF2","#AF2","#F88","#F88","#AF2","#F88",
+			"#0F0","#0F0","#0F0","#0F0","#0F0","#0F0","#0F0","#0F0",
+			"#FF0","#FF0","#FF0","#FF0","#FF0","#FF0","#FF0","#FF0",
+			"#F20","#F20","#F20","#F20","#F20","#F20","#F20","#F20",
+			"#A40","#A40","#A40","#A40","#A40","#A40","#A40","#A40",
+			"#AAA","#AAA","#AAA","#AAA","#AAA","#AAA","#AAA","#AAA",
+			"#AAA","#AAA","#AAA","#AAA","#AAA","#AAA","#AAA","#AAA",
+			"#AAA","#AAA","#AAA","#AAA","#AAA","#AAA","#AAA","#AAA",
+			"#A40","#A40","#A40","#A40","#A40","#A40","#AF2","#A40",
+			"#F88","#F88","#F88","#F88","#F88","#F88","#F88","#F88",
+			"#F88","#FFF","#FFF","#FFF","#FFF","#FFF","#F88","#F88",
+		];
 		var sound=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
 		//var sound=["1-","1#-","2-","2#-","3-","4-","4#-","5-","4#-","6-","6#-","7-"];
 		var show=(function(){
+			var s=null;
 			//console.log(s);
-			var startX=0;
-			var startY=10;
+			var canvas=document.getElementById("canvas");
+			var mousePoseX=0;
+			var mousePoseY=0;
+			canvas.onmousemove=function(ev){
+				//console.log(ev);
+				mousePoseX=ev.clientX;
+				mousePoseY=ev.clientY;
+			}
+			// canvas.onclick=function(ev){
+			// 	draw();
+			// }
+			var selInfo={
+				type:"",
+				data:null
+			}
+			var viewLeft=0;
+			var viewTop=10;
+			var viewRight=10;
+			var viewBotton=10;
 			var sizeX=1;
 			var sizeY=1;
-			var canvas=document.getElementById("canvas");
-			var resize=function(){
-				canvas.width=canvas.offsetWidth;
-				canvas.height=canvas.offsetHeight;
-			}
-			resize();
 			var nodeHeight=20;
 			var viewStart=0;
 			var c=canvas.getContext("2d");
 			var draw=function(){
+				//清空画布并设置宽度与高度
+				canvas.width=canvas.offsetWidth;
+				canvas.height=canvas.offsetHeight;
+				c.textBaseline="top";
+				//清空鼠标选择的物品类型
+				selInfo.type="";
 				if(s){
-					c.clearRect(0,0,canvas.width,canvas.height); 
+					//c.clearRect(0,0,canvas.width,canvas.height); 
+					//绘制音符
 					var usedTracks=s.usedTracks;
 					var dy=0;
 					for(var i=0;i<usedTracks.length;i++){
@@ -62,40 +99,64 @@
 						var usedChannels=track.usedChannels;
 						for(var j=0;j<usedChannels.length;j++){
 							var channel=track.getChannel(usedChannels[j].id);
-							var list=channel.getDataAABB(viewStart,viewStart+(canvas.width-startX)/sizeX);
+							var list=channel.getDataAABB(viewStart,viewStart+(canvas.width-viewLeft-viewRight)/sizeX);
 							//console.log(viewStart);
 							for(var k=0;k<list.length;k++){
 								//fillStyle()
-								var x=(list[k].start-viewStart)*sizeX+startX;//
-								var y=(list[k].pos*nodeHeight+dy)*sizeY+startY;
+								var x=(list[k].start-viewStart)*sizeX+viewLeft;//
+								var y=(list[k].pos*nodeHeight+dy)*sizeY+viewTop;
 								c.strokeStyle="#666";
-								c.fillStyle="#08f";
+								c.fillStyle=type_color[list[k].programNumber];//"#08f";
 								c.beginPath();
 								c.rect(x,y,(list[k].end-list[k].start)*sizeX,nodeHeight*sizeY);
 								c.fill();
 								c.stroke();
-								c.textBaseline="top";
 								c.fillStyle="#000";
 								c.font=nodeHeight*sizeY+"px Arial";
 								var text=sound[list[k].noteNumber%sound.length]+parseInt(list[k].noteNumber/sound.length);
 								c.beginPath();
 								c.fillText(text,x,y);
+								if(mousePoseX>x&&mousePoseX<(list[k].end-list[k].start)*sizeX+x&&mousePoseY>y&&mousePoseY<nodeHeight*sizeY+y){
+									selInfo.type="key";
+									selInfo.data=list[k];
+								}
 							}
 							dy+=nodeHeight*channel.posNum+2;
 						}
 					}
+					//绘制节拍线
 					var ticksPerBeat=s.ticksPerBeat;
 					var beat=parseInt(viewStart/ticksPerBeat)*ticksPerBeat-viewStart;
 					c.strokeStyle="#666";
-					while(beat<(canvas.width-startX)/sizeX){
+					while(beat<(canvas.width-viewLeft)/sizeX){
 						c.beginPath();
-						c.moveTo(startX+beat*sizeX,startY);
-						c.lineTo(startX+beat*sizeX,canvas.height);
+						c.moveTo(viewLeft+beat*sizeX,viewTop);
+						c.lineTo(viewLeft+beat*sizeX,canvas.height);
 						c.stroke();
 						beat+=ticksPerBeat;
 					}
 				}
+
+				//绘制界面上状态栏
+				var barSize=20;
+				c.strokeStyle="#888";
+				c.fillStyle="#ccc";
+				c.rect(0,canvas.height-barSize,canvas.width,barSize);
+				c.fill();
+				c.stroke();
+				//绘制当前时间
+				c.fillStyle="#000";
+				c.font=barSize+"px 微软雅黑";
+				var time=mousePoseX*sizeX+viewStart;
+				c.fillText(parseInt(time/60/100)+":"+parseInt(time/100)%60+"."+(time%100),1,canvas.height-barSize+1);
+				if(selInfo.type=="key"){
+					// console.log(type[selInfo.data.programNumber]);
+					c.fillText(type[selInfo.data.programNumber],160,canvas.height-barSize+1);
+					c.fillText(sound[selInfo.data.noteNumber%sound.length]+parseInt(selInfo.data.noteNumber/sound.length),90,canvas.height-barSize+1);
+				}
+				requestAnimationFrame(draw);
 			}
+			draw();
 			canvas.onmousewheel=function(ev){
 				//console.log(ev);
 				if(ev.altKey){
@@ -117,13 +178,12 @@
 					if(viewStart<0)viewStart=0;
 					if(viewStart>s.tickNumber) viewStart=s.tickNumber;
 				}
-				draw();
+				//draw();
 				return false;
 			}
-			//draw();
 			return{
-				resize:resize,
-				draw:draw
+				draw:draw,
+				load:data=>s=new SMidiFile(data)
 			}
 		})();
 		// var xhr=$.ajax();
@@ -171,8 +231,8 @@
 				if(exname="mid"){
 					var reader = new FileReader();
 					reader.onload=function(ev){
-						window.s=new SMidiFile(this.result);
-						show.draw();
+						//window.s=new SMidiFile(this.result);
+						show.load(this.result);
 					}
 					reader.readAsBinaryString(e.dataTransfer.files[i]);
 					return;
