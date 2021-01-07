@@ -43,22 +43,25 @@
 			var s=null;//midi音乐数据
 			var canvas=document.getElementById(id);//画布
 			var mousePoseX=0, mousePoseY=0;//记录鼠标位置
-			// canvas.onclick=function(ev){
-			// 	draw();
-			// }
+			var moveingMidiHSol=false;//移动水平滚动条标志
+			//鼠标指向信息
 			var selInfo={
 				type:"",
 				data:null
 			}
+			//midi显示区域
 			var viewLeft=100;
 			var viewTop=10;
 			var viewRight=10;
 			var viewBottom=40;
-			var viewWidth=0;
-			var viewHeight=0;
+			var viewWidth=0;//x渲染时计算 全局变量
+			var viewHeight=0;//
+			//显示缩放
 			var sizeX=1;
 			var sizeY=1;
+			//轨道高度
 			var nodeHeight=20;
+			//视野书评位置
 			var viewStart=0;
 
 			//基本函数
@@ -165,17 +168,26 @@
 					c.fillStyle="#EEE";
 					c.beginPath();
 					//c.rect(viewLeft,canvas.height-viewBottom+barSize,canvas.width+viewRight+viewLeft,barSize);
-					c.rect(viewLeft,viewTop+viewHeight,canvas.width-viewRight-viewLeft,barSize);
+					c.rect(viewLeft,viewTop+viewHeight,viewWidth,barSize);
 					c.fill();
 					c.stroke();
-					c.fillStyle="#F00";
 					c.beginPath();
+					c.fillStyle="#CCC";
 					c.rect(
 						viewLeft+(viewStart/s.tickNumber)*(viewWidth),
 						viewTop+viewHeight,
 						viewWidth/sizeX/s.tickNumber*viewWidth,
 						barSize
 					);
+					if(checkMouseIn(
+						viewLeft+(viewStart/s.tickNumber)*(viewWidth),
+						viewTop+viewHeight,
+						viewWidth/sizeX/s.tickNumber*viewWidth,
+						barSize
+					)){
+						c.fillStyle="#AAA";
+						selInfo.type="MidiHSol";
+					}
 					c.fill();
 					c.stroke();
 				}
@@ -184,6 +196,7 @@
 				var barSize=20;
 				c.strokeStyle="#888";
 				c.fillStyle="#ccc";
+				c.beginPath();
 				c.rect(0,canvas.height-barSize,canvas.width,barSize);
 				c.fill();
 				c.stroke();
@@ -242,6 +255,20 @@
 				//console.log(ev);
 				mousePoseX=ev.clientX;
 				mousePoseY=ev.clientY;
+				if(moveingMidiHSol){
+					console.log(ev);
+					viewStart+=ev.movementX*s.tickNumber/viewWidth;
+				}
+			}
+			canvas.onmousedown=function(){
+				if(selInfo.type=="MidiHSol"){
+					moveingMidiHSol=true;
+				}
+			}
+			canvas.onmouseup=function(){
+				if(moveingMidiHSol){
+					moveingMidiHSol=false;
+				}
 			}
 			// return{
 			// 	draw:draw,
