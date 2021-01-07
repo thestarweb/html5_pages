@@ -53,7 +53,7 @@
 			var viewLeft=100;
 			var viewTop=10;
 			var viewRight=10;
-			var viewBottom=20;
+			var viewBottom=40;
 			var viewWidth=0;
 			var viewHeight=0;
 			var sizeX=1;
@@ -71,22 +71,44 @@
 			var drawKey=function(key,dy,showP){
 				if(showP) {
 					c.lineWidth=2;
-					console.log(dy);
 				}
 				var x=(key.start-viewStart)*sizeX+viewLeft;//
 				var y=(key.pos*nodeHeight+dy)*sizeY+viewTop;
+				var w=(key.end-key.start)*sizeX;
+				var h=nodeHeight*sizeY;
+				//var rect=[x>viewLeft?x:viewLeft,y>viewTop?y:viewTop,(w+x)<(viewLeft+viewWidth)?w:(viewLeft+viewWidth-x),(h+y)<(viewLeft+viewWidth)?h:(viewLeft+viewWidth-y)];
+				var ef=true;
+				if(x<viewLeft){
+					w-=viewLeft-x;
+					x=viewLeft;
+					ef=false;
+				}
+				if(y<viewTop){
+					h-=viewTop-y;
+					y=viewLeft;
+					ef=false;
+				}
+				if(w+x>viewLeft+viewWidth){
+					w=viewLeft+viewWidth-x;
+				}
+				if(h+y>viewTop+viewHeight){
+					h=viewTop+viewHeight-y;
+					ef=false;
+				}
 				c.strokeStyle=showP?"#A22":"#666";
 				c.fillStyle=type_color[key.programNumber];//"#08f";
 				c.beginPath();
-				c.rect(x,y,(key.end-key.start)*sizeX,nodeHeight*sizeY);
+				c.rect(x,y,w,h);
 				c.fill();
 				c.stroke();
-				c.fillStyle="#000";
-				c.font=nodeHeight*sizeY+"px Arial";
-				var text=sound[key.noteNumber%sound.length]+parseInt(key.noteNumber/sound.length);
-				c.beginPath();
-				c.fillText(text,x,y);
-				return checkMouseIn(x,y,(key.end-key.start)*sizeX,nodeHeight*sizeY);
+				if(ef&&w>(nodeHeight*sizeY*2)&&x+(nodeHeight*sizeY)*2<(viewLeft+viewWidth)){
+					c.fillStyle="#000";
+					c.font=nodeHeight*sizeY+"px Arial";
+					var text=sound[key.noteNumber%sound.length]+parseInt(key.noteNumber/sound.length);
+					c.beginPath();
+					c.fillText(text,x,y);
+				}
+				return checkMouseIn(x,y,w,h);
 			}
 			var draw=function(){
 				//清空画布并设置宽度与高度
@@ -125,12 +147,13 @@
 					}
 					//绘制节拍线
 					var ticksPerBeat=s.ticksPerBeat;
-					var beat=parseInt(viewStart/ticksPerBeat)*ticksPerBeat-viewStart;
+					var beat=(parseInt(viewStart/ticksPerBeat)+1)*ticksPerBeat-viewStart;
 					c.strokeStyle="#666";
-					while(beat<(canvas.width-viewLeft)/sizeX){
+					while(beat<(viewLeft+viewWidth)/sizeX){
+						//if(best)
 						c.beginPath();
 						c.moveTo(viewLeft+beat*sizeX,viewTop);
-						c.lineTo(viewLeft+beat*sizeX,canvas.height);
+						c.lineTo(viewLeft+beat*sizeX,viewTop+viewHeight);
 						c.stroke();
 						beat+=ticksPerBeat;
 					}
@@ -142,14 +165,14 @@
 					c.fillStyle="#EEE";
 					c.beginPath();
 					//c.rect(viewLeft,canvas.height-viewBottom+barSize,canvas.width+viewRight+viewLeft,barSize);
-					c.rect(viewLeft,viewTop+viewHeight-barSize,canvas.width-viewRight-viewLeft,barSize);
+					c.rect(viewLeft,viewTop+viewHeight,canvas.width-viewRight-viewLeft,barSize);
 					c.fill();
 					c.stroke();
 					c.fillStyle="#F00";
 					c.beginPath();
 					c.rect(
 						viewLeft+(viewStart/s.tickNumber)*(viewWidth),
-						viewTop+viewHeight-barSize,
+						viewTop+viewHeight,
 						viewWidth/sizeX/s.tickNumber*viewWidth,
 						barSize
 					);
