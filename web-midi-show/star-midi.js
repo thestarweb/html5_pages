@@ -89,7 +89,7 @@ var SMidiFile=(function(){
 			get:function(){
 				var list=[];
 				for(var i=0;i<channels.length;i++){
-					if(channels[i].length>0){
+					if(channels[i].posNum>0){
 						list.push({id:i});
 					}
 				}

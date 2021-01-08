@@ -1,4 +1,9 @@
 (function(){
+
+
+
+
+
 		var type=[
 			"大钢琴","明亮的钢琴","电钢琴","酒吧钢琴","柔和电钢琴","和声效果电钢琴","拨弦古钢琴","击弦古钢琴",
 			"钢片琴","钟琴","八音盒","颤音琴","马林巴","木琴","管钟","大扬琴",
@@ -51,7 +56,7 @@
 			}
 			//midi显示区域
 			var viewLeft=100;
-			var viewTop=10;
+			var viewTop=50;
 			var viewRight=10;
 			var viewBottom=40;
 			var viewWidth=0;//x渲染时计算 全局变量
@@ -71,6 +76,64 @@
 
 			//绘制函数
 			var c=canvas.getContext("2d");
+			//绘制节拍线
+			var drawBeatLines=function(ticksPerBeat){
+				var beat=(parseInt(viewStart/ticksPerBeat)+1);
+				var beatT=beat%4;
+				var perAdd=ticksPerBeat*sizeX;
+				var perAdd4=perAdd/4;
+				c.strokeStyle="#666";
+				pos=viewLeft+(beat*ticksPerBeat-viewStart)*sizeX;
+				c.font="20px Arial";
+				while(pos<viewLeft+viewWidth){
+					//if(best)
+					c.lineWidth=2;
+					if(beatT==4){
+						c.lineWidth=4;
+						beatT=0;
+						c.fillText((beat)/4,pos+2,viewTop-44);
+					}
+					if(perAdd>50||beatT==0){
+						c.beginPath();
+						c.moveTo(pos,viewTop-44);
+						c.lineTo(pos,viewTop+viewHeight);
+						c.stroke();
+						if(perAdd4>50){
+							var rdPos=pos;
+							for(var i=0;i<3;i++){
+								rdPos-=perAdd4;
+								if(rdPos<viewLeft)break;
+								c.lineWidth=0.5;
+								c.beginPath();
+								c.moveTo(rdPos,viewTop-44);
+								c.lineTo(rdPos,viewTop+viewHeight);
+								c.stroke();
+							}
+						}
+					}
+					beatT++;
+					beat++;
+					pos+=perAdd;
+						
+				}
+				if(perAdd4>50){
+					var rdPos=pos;
+					for(var i=0;i<3;i++){
+						rdPos-=perAdd4;
+						if(rdPos>viewLeft+viewWidth)continue;
+						c.lineWidth=0.5;
+						c.beginPath();
+						c.moveTo(rdPos,viewTop-44);
+						c.lineTo(rdPos,viewTop+viewHeight);
+						c.stroke();
+					}
+				}
+				c.lineWidth=4;
+				c.beginPath();
+				c.moveTo(viewLeft,viewTop-4);
+				c.lineTo(viewLeft+viewWidth,viewTop-4);
+				c.stroke();
+			}
 			var drawKey=function(key,dy,showP){
 				if(showP) {
 					c.lineWidth=2;
@@ -127,6 +190,7 @@
 					if(viewStart+viewWidth/sizeX>s.tickNumber) viewStart=s.tickNumber-viewWidth/sizeX;
 					if(viewStart<0)viewStart=0;
 					//c.clearRect(0,0,canvas.width,canvas.height); 
+					drawBeatLines(s.ticksPerBeat);
 					//绘制音符
 					var usedTracks=s.usedTracks;
 					var dy=0;
@@ -137,7 +201,6 @@
 						for(var j=0;j<usedChannels.length;j++){
 							var channel=track.getChannel(usedChannels[j].id);
 							var list=channel.getDataAABB(viewStart,viewStart+(canvas.width-viewLeft-viewRight)/sizeX);
-							//console.log(viewStart);
 							for(var k=0;k<list.length;k++){
 								//fillStyle()
 								if(drawKey(list[k],dy)){
@@ -146,23 +209,25 @@
 								}
 							}
 							dy+=nodeHeight*channel.posNum+2;
+							c.strokeStyle="#CCC";
+							c.lineWidth=0.8;
+							c.beginPath();
+							c.moveTo(viewLeft,(dy-1)*sizeY+viewTop);
+							c.lineTo(viewLeft+viewWidth,(dy-1)*sizeY+viewTop);
+							c.closePath();
+							c.stroke();
 						}
-					}
-					//绘制节拍线
-					var ticksPerBeat=s.ticksPerBeat;
-					var beat=(parseInt(viewStart/ticksPerBeat)+1)*ticksPerBeat-viewStart;
-					c.strokeStyle="#666";
-					while(beat<(viewLeft+viewWidth)/sizeX){
-						//if(best)
+						c.lineWidth=2;
+						c.strokeStyle="#888";
 						c.beginPath();
-						c.moveTo(viewLeft+beat*sizeX,viewTop);
-						c.lineTo(viewLeft+beat*sizeX,viewTop+viewHeight);
+						c.moveTo(viewLeft,(dy-1)*sizeY+viewTop);
+						c.lineTo(viewLeft+viewWidth,(dy-1)*sizeY+viewTop);
+						c.closePath();
 						c.stroke();
-						beat+=ticksPerBeat;
+						dy+=2;
 					}
-				}
-				//绘制滚动条
-				if(s){
+
+					//绘制滚动条
 					var barSize=20;
 					c.strokeStyle="#888";
 					c.fillStyle="#EEE";
@@ -203,10 +268,10 @@
 				//绘制当前时间
 				c.fillStyle="#000";
 				c.font=barSize+"px 微软雅黑";
-				if(checkMouseIn(viewLeft,viewRight,viewWidth,viewHeight)){
-					var time=parseInt(((mousePoseX-viewLeft)/sizeX+viewStart)/1);
-					c.fillText(parseInt(time/60/100)+":"+parseInt(time/100)%60+"."+(time%100),1,canvas.height-barSize+1);
-				}
+				// if(checkMouseIn(viewLeft,viewRight,viewWidth,viewHeight)){
+				// 	var time=parseInt(((mousePoseX-viewLeft)/sizeX+viewStart)/1);
+				// 	c.fillText(parseInt(time/60/100)+":"+parseInt(time/100)%60+"."+(time%100),1,canvas.height-barSize+1);
+				// }
 				if(selInfo.type=="key"){
 					// console.log(type[selInfo.data.programNumber]);
 					c.fillText(type[selInfo.data.key.programNumber],160,canvas.height-barSize+1);
