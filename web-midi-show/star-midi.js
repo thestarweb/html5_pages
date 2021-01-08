@@ -51,7 +51,7 @@ var SMidiFile=(function(){
 				var data=[];
 				var i=0;
 				for(var i=0;i<key.length;i++){
-					if((key[i].start>start&&key[i].start<end)||(key[i].end>start&&key[i].end<end)||(key[i].start<start&&key[i].end>end)){
+					if((key[i].start>start&&key[i].start<end)||(key[i].end>start&&key[i].end<end)||(key[i].start<=start&&key[i].end>=end)){
 						data.push(key[i]);
 					}
 				}
