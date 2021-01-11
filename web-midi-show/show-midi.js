@@ -316,12 +316,19 @@
 				}
 				return false;
 			}
+			//兼容火狐
+			canvas.addEventListener('DOMMouseScroll',function(ev){
+				console.log(ev);
+				ev.wheelDelta=-ev.detail;
+				canvas.onmousewheel(ev);
+				ev.stopPropagation();
+				ev.preventDefault();
+			},false);
 			canvas.onmousemove=function(ev){
 				//console.log(ev);
 				mousePoseX=ev.clientX;
 				mousePoseY=ev.clientY;
 				if(moveingMidiHSol){
-					console.log(ev);
 					viewStart+=ev.movementX*s.tickNumber/viewWidth;
 				}
 			}
